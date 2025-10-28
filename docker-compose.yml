@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:14
+    container_name: budget-db
+    environment:
+      POSTGRES_USER: SECRET
+      POSTGRES_PASSWORD: SECRET
+      POSTGRES_DB: budget_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: budget-api
+    depends_on:
+      - db
+    env_file:
+      - ./secrets/.env
+    environment:
+      FLASK_APP: app.budget_app
+      FLASK_ENV: development
+    ports:
+      - "5000:5000"
+    command: ./entrypoint.sh
+    restart: always
+
+volumes:
+  postgres_data:
+
