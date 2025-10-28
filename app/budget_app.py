@@ -26,8 +26,6 @@ from app.db_models import Transaction, Category
 migrate = Migrate(app, db)
 
 
-DEFAULT_SATURATION = 0.4
-DEFAULT_BRIGHTNESS = 1.0
 
 #FRONT END FORM
 HTML_FORM = """
@@ -77,6 +75,7 @@ HTML_FORM = """
   </body>
 </html>
 """
+
 #POST A NEW CATEGORY
 @app.route("/categories", methods=["POST"])
 def create_category():
@@ -102,7 +101,6 @@ def create_category():
 def index():
     return render_template_string(HTML_FORM)
 
-# CRUD endpoints
 
 # GET all transactions
 @app.route("/transactions", methods=["GET"])
@@ -177,6 +175,7 @@ def get_category(name):
         "color": category.color
     })
 
+#HELPER FUNCTION 
 def generate_unique_color(existing_colors, index):
     """
     Generates soft pastel colors, starting at a random hue so the first color
@@ -200,6 +199,7 @@ def generate_unique_color(existing_colors, index):
 
     existing_colors.add(color)
     return color
+
 # POST a new transaction
 @app.route("/transactions", methods=["POST"])
 def add_transaction():
@@ -317,6 +317,7 @@ def add_transaction():
         print("ERROR in add_transaction:", e)
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
 # PUT update a transaction
 @app.route("/transactions/<int:trans_id>", methods=["PUT"])
 def update_transaction(trans_id):
@@ -347,7 +348,7 @@ def delete_transaction(trans_id):
     db.session.commit()
     return jsonify({"result": True})
 
-# Optional: Summary endpoint
+#Summary endpoint
 @app.route("/summary", methods=["GET"])
 def summary():
     transactions = Transaction.query.all()
