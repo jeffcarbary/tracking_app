@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Add Transaction</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 1em;
+      background: #f9f9f9;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      background: white;
+      padding: 1em 2em;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    h3 {
+      text-align: center;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 0.5em;
+      margin-bottom: 1.2em;
+      padding: 0.6em;
+      font-size: 1em;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #msg {
+      color: green;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 0.5em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h3>Add Transaction</h3>
+    <form id="txnForm">
+      <label>Description:</label>
+      <input id="desc" type="text" required>
+
+      <label>Category (optional):</label>
+      <input id="cat" type="text">
+
+      <label>Amount:</label>
+      <input id="amt" type="number" step="0.01" required>
+
+      <label>Date (optional, YYYY-MM-DD):</label>
+      <input id="date" type="text" placeholder="2025-10-28">
+
+      <label>Paste Alert (optional):</label>
+      <textarea id="alertText" placeholder="Paste your transaction alert here"></textarea>
+
+      <button type="submit">Add Transaction</button>
+    </form>
+
+    <p id="msg"></p>
+  </div>
+
+  <script>
+    const form = document.getElementById('txnForm');
+    const alertText = document.getElementById('alertText');
+
+    // Auto-fill from paste
+    alertText.addEventListener('input', () => {
+      const text = alertText.value.trim();
+      if (!text) return;
+
+      const regex = /\$([0-9.]+).*transaction with (.+?) on (.+?) at/;
+      const match = text.match(regex);
+      if (match) {
+        const [, amount, description, date] = match;
+        document.getElementById('desc').value = description;
+        document.getElementById('amt').value = parseFloat(amount);
+        document.getElementById('date').value = new Date(date).toISOString().slice(0,10);
+      }
+    });
+
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        description: document.getElementById('desc').value,
+        category: document.getElementById('cat').value,
+        amount: parseFloat(document.getElementById('amt').value),
+        date: document.getElementById('date').value || null
+      };
+
+      try {
+        const res = await fetch('/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const resultText = await res.text();
+        document.getElementById('msg').innerText =
+          res.ok ? '✅ Transaction added!' : `❌ Error: ${resultText}`;
+        form.reset();
+      } catch (err) {
+        document.getElementById('msg').innerText = '⚠️ Network error';
+      }
+    });
+  </script>
+</body>
+</html>
