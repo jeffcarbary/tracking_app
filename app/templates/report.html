@@ -23,6 +23,7 @@
   <section class="report-section">
     <h3>Monthly Report</h3>
     <p><strong>Total:</strong> <span id="monthly_total">–</span></p>
+    <p><strong>Weekly Avg:</strong> <span id="weekly_avg">–</span></p>
     <p><strong>Pace:</strong> <span id="monthly_pace">–</span></p>
     <div class="chart-container">
       <canvas id="monthlyChart"></canvas>
@@ -211,9 +212,15 @@ async function loadMonthlyReport() {
     const pctOfBudget = ((projectedSpend / MONTHLY_BUDGET) * 100).toFixed(1);
     const diff = projectedSpend - MONTHLY_BUDGET;
 
+    const weeklyAvg = (projectedSpend / daysInMonth) * 7;
+    const weekAvgElem = document.getElementById("weekly_avg");
+    weekAvgElem.innerText = `$${weeklyAvg.toFixed(2)}`;
+
     const paceElem = document.getElementById("monthly_pace");
     paceElem.innerText = `${pctOfBudget}% of $${MONTHLY_BUDGET} — on pace for $${projectedSpend.toFixed(0)} (${diff > 0 ? `❌ $${diff.toFixed(0)} over` : `✅ $${Math.abs(diff).toFixed(0)} under`})`;
     paceElem.style.color = diff > 0 ? "red" : "green";
+   
+   
 
     drawMonthlyChart(data);
   } catch (err) {
