@@ -1,5 +1,5 @@
 #!/usr/local/bin/python3
-from flask import Flask, jsonify, request, abort, render_template_string
+from flask import Flask, jsonify, request, abort, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime, date, timedelta
@@ -26,56 +26,6 @@ from app.db_models import Transaction, Category
 migrate = Migrate(app, db)
 
 
-
-#FRONT END FORM
-HTML_FORM = """
-<!DOCTYPE html>
-<html>
-  <body style="font-family: sans-serif; max-width: 400px; margin: 2em auto;">
-    <h3>Add Transaction</h3>
-    <form id="txnForm">
-      <label>Description:</label><br>
-      <input id="desc" type="text" required><br><br>
-
-      <label>Category (optional):</label><br>
-      <input id="cat" type="text"><br><br>
-
-      <label>Amount:</label><br>
-      <input id="amt" type="number" step="0.01" required><br><br>
-
-      <button type="submit">Add Transaction</button>
-    </form>
-
-    <p id="msg" style="color: green; font-weight: bold;"></p>
-
-    <script>
-      const form = document.getElementById('txnForm');
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = {
-          description: document.getElementById('desc').value,
-          category: document.getElementById('cat').value,
-          amount: parseFloat(document.getElementById('amt').value)
-        };
-        try {
-          const res = await fetch('/transactions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
-          const resultText = await res.text();
-          document.getElementById('msg').innerText =
-            res.ok ? '✅ Transaction added!' : `❌ Error: ${resultText}`;
-          form.reset();
-        } catch (err) {
-          document.getElementById('msg').innerText = '⚠️ Network error';
-        }
-      });
-    </script>
-  </body>
-</html>
-"""
-
 #POST A NEW CATEGORY
 @app.route("/categories", methods=["POST"])
 def create_category():
@@ -99,7 +49,7 @@ def create_category():
     }), 201
 @app.route("/", methods=["GET"])
 def index():
-    return render_template_string(HTML_FORM)
+    return render_template("add_transaction.html")
 
 
 # GET all transactions
@@ -109,6 +59,8 @@ def get_transactions():
         # Optional query parameters
         start_date_str = request.args.get("start_date")
         end_date_str = request.args.get("end_date")
+        category_name = request.args.get("category")  
+        description_substr = request.args.get("description")  
 
         # Parse dates if provided
         start_date = None
@@ -127,6 +79,12 @@ def get_transactions():
             query = query.filter(Transaction.date >= start_date)
         if end_date:
             query = query.filter(Transaction.date <= end_date)
+        if category_name:
+        # Join with Category table and filter by name
+            query = query.join(Category).filter(Category.name.ilike(f"%{category_name}%"))
+        if description_substr:
+            query = query.filter(Transaction.description.ilike(f"%{description_substr}%"))
+
 
         transactions = query.all()
         #transactions_list = [t.to_dict() for t in transactions]
