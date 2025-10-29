@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>📊 Budget Reports</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="container">
+  <h2>📅 Weekly & Monthly Reports</h2>
+
+  <section class="report-section">
+    <h3>Weekly Report</h3>
+    <p><strong>Total:</strong> <span id="weekly_total">–</span></p>
+    <p><strong>Pace:</strong> <span id="weekly_pace">–</span></p>
+    <div class="chart-container">
+      <canvas id="weeklyChart"></canvas>
+    </div>
+  </section>
+
+  <section class="report-section">
+    <h3>Monthly Report</h3>
+    <p><strong>Total:</strong> <span id="monthly_total">–</span></p>
+    <p><strong>Pace:</strong> <span id="monthly_pace">–</span></p>
+    <div class="chart-container">
+      <canvas id="monthlyChart"></canvas>
+    </div>
+  </section>
+
+  <p id="msg" class="loading">Loading report...</p>
+  <button onclick="window.location.href='/'">← Back to Add Transaction</button>
+</div>
+
+<script>
+// ============================================================
+// 🔧 GLOBAL DATE CONTROL — change this line to spoof the date!
+// ============================================================
+//const NOW = new Date("2025-11-01T12:00:00");  // 👈 change for testing
+const NOW = new Date();
+function today() { return new Date(NOW); }
+
+// ============================================================
+// 💰 BUDGET HELPERS
+// ============================================================
+function getWeeklyBudget(todayDate = today()) {
+  // We define Friday as day 5 (0 = Sunday)
+  const day = todayDate.getDay();
+  const diffToFri = (day >= 5) ? day - 5 : day + 2;
+
+  let weekStart = new Date(todayDate);
+  weekStart.setDate(todayDate.getDate() - diffToFri);
+
+  let weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+
+  // Month boundaries
+  const firstOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+  const lastOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0);
+
+  // Clip to the current month
+  if (weekStart < firstOfMonth) weekStart = firstOfMonth;
+  if (weekEnd > lastOfMonth) weekEnd = lastOfMonth;
+
+  // Count how many days actually exist in this week within the month
+  const numWeekDays =
+    Math.floor((weekEnd - weekStart) / (1000 * 60 * 60 * 24)) + 1;
+
+  // ✅ Rule: full week = $800, partial = $100 × days
+  const WEEKLY_BUDGET = numWeekDays === 7 ? 800 : 100 * numWeekDays;
+  return WEEKLY_BUDGET;
+}
+
+function getMonthlyBudget(todayDate = today()) {
+  const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate();
+  return 800 * 4 + 100 * (daysInMonth - 28);
+}
+
+const WEEKLY_BUDGET = getWeeklyBudget();
+const MONTHLY_BUDGET = getMonthlyBudget();
+
+// ============================================================
+// 🚀 MAIN LOADERS
+// ============================================================
+document.addEventListener("DOMContentLoaded", () => {
+  loadWeeklyReport();
+  loadMonthlyReport();
+});
+
+// ---------------- WEEKLY REPORT ----------------
+async function loadWeeklyReport() {
+  try {
+    const res = await fetch("/reports/weekly");
+    const data = await res.json();
+
+    document.getElementById("weekly_total").innerText = `$${data.weekly_total}`;
+
+    const todayDate = today();
+    const offset = (todayDate.getDay() + 2) % 7; // adjust since week starts Friday
+    const dayOfWeek = offset + 1;
+
+    const projectedSpend = (data.weekly_total / dayOfWeek) * 7;
+    const pctOfBudget = ((projectedSpend / WEEKLY_BUDGET) * 100).toFixed(1);
+    const diff = projectedSpend - WEEKLY_BUDGET;
+
+    const paceElem = document.getElementById("weekly_pace");
+    paceElem.innerText = `${pctOfBudget}% of $${WEEKLY_BUDGET} — on pace for $${projectedSpend.toFixed(0)} (${diff > 0 ? `❌ $${diff.toFixed(0)} over` : `✅ $${Math.abs(diff).toFixed(0)} under`})`;
+    paceElem.style.color = diff > 0 ? "red" : "green";
+
+    drawWeeklyChart(data);
+  } catch (err) {
+    console.error(err);
+    document.getElementById("msg").innerText = "❌ Failed to load weekly report";
+    document.getElementById("msg").className = "error";
+  }
+}
+
+function drawWeeklyChart(data) {
+  const ctx = document.getElementById('weeklyChart').getContext('2d');
+  const todayDate = today();
+
+  // Determine current week starting Friday
+  const day = todayDate.getDay();
+  const diffToFri = (day >= 5) ? day - 5 : day + 2;
+  const weekStart = new Date(todayDate);
+  weekStart.setDate(todayDate.getDate() - diffToFri);
+
+  const labels = ['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu'];
+
+  // ---- Actual cumulative spend ----
+  const dailyTotals = data.daily_totals || {};
+  const actualSpend = [];
+  let cumulative = 0;
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    cumulative += dailyTotals[dateStr] || 0;
+    // Only show up to today
+    actualSpend.push(date <= todayDate ? cumulative : null);
+  }
+
+  // ---- Projected cumulative spend ----
+  const daysSoFar = actualSpend.filter(v => v !== null).length;
+  const avgDaily = daysSoFar ? (cumulative / daysSoFar) : 0;
+  const projectedLine = Array.from({ length: 7 }, (_, i) => avgDaily * (i + 1));
+
+  // ---- Weekly budget line ----
+  const weeklyBudgetLine = new Array(7).fill(WEEKLY_BUDGET);
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Actual Spend',
+          data: actualSpend,
+          borderColor: 'blue',
+          borderWidth: 2,
+          tension: 0.3,
+          fill: false,
+          spanGaps: false
+        },
+        {
+          label: 'Projected Spend',
+          data: projectedLine,
+          borderColor: 'orange',
+          borderDash: [5, 5],
+          borderWidth: 2,
+          tension: 0.3,
+          fill: false
+        },
+        {
+          label: 'Budget',
+          data: weeklyBudgetLine,
+          borderColor: 'red',
+          borderDash: [2, 2],
+          borderWidth: 1,
+          tension: 0,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Cumulative Spend ($)' } },
+        x: { title: { display: true, text: 'Day of Week' } }
+      },
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+}
+
+// ---------------- MONTHLY REPORT ----------------
+async function loadMonthlyReport() {
+  try {
+    const res = await fetch("/reports/monthly");
+    const data = await res.json();
+
+    document.getElementById("monthly_total").innerText = `$${data.monthly_total}`;
+
+    const todayDate = today();
+    const dayOfMonth = todayDate.getDate();
+    const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate();
+
+    const projectedSpend = (data.monthly_total / dayOfMonth) * daysInMonth;
+    const pctOfBudget = ((projectedSpend / MONTHLY_BUDGET) * 100).toFixed(1);
+    const diff = projectedSpend - MONTHLY_BUDGET;
+
+    const paceElem = document.getElementById("monthly_pace");
+    paceElem.innerText = `${pctOfBudget}% of $${MONTHLY_BUDGET} — on pace for $${projectedSpend.toFixed(0)} (${diff > 0 ? `❌ $${diff.toFixed(0)} over` : `✅ $${Math.abs(diff).toFixed(0)} under`})`;
+    paceElem.style.color = diff > 0 ? "red" : "green";
+
+    drawMonthlyChart(data);
+  } catch (err) {
+    console.error(err);
+    document.getElementById("msg").innerText = "❌ Failed to load monthly report";
+    document.getElementById("msg").className = "error";
+  }
+}
+
+function drawMonthlyChart(data) {
+  const ctx = document.getElementById('monthlyChart').getContext('2d');
+  const todayDate = today();
+  const dayOfMonth = todayDate.getDate();
+  const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate();
+  const labels = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  // ---- Actual cumulative spend ----
+  const dailyTotals = data.daily_totals || {};
+  const actualSpend = [];
+  let cumulative = 0;
+  for (let i = 1; i <= daysInMonth; i++) {
+    const dateStr = new Date(todayDate.getFullYear(), todayDate.getMonth(), i)
+      .toISOString()
+      .split('T')[0];
+    cumulative += dailyTotals[dateStr] || 0;
+    actualSpend.push(i <= dayOfMonth ? cumulative : null);
+  }
+
+  // ---- Projected cumulative spend ----
+  const avgDaily = cumulative / dayOfMonth;
+  const projectedLine = Array.from({ length: daysInMonth }, (_, i) => avgDaily * (i + 1));
+
+  // ---- Budget line ----
+  const budgetLine = new Array(daysInMonth).fill(MONTHLY_BUDGET);
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Actual Spend',
+          data: actualSpend,
+          borderColor: 'blue',
+          borderWidth: 2,
+          tension: 0.3,
+          fill: false,
+          spanGaps: false
+        },
+        {
+          label: 'Projected Spend',
+          data: projectedLine,
+          borderColor: 'orange',
+          borderDash: [5, 5],
+          borderWidth: 2,
+          tension: 0.3,
+          fill: false
+        },
+        {
+          label: 'Budget',
+          data: budgetLine,
+          borderColor: 'red',
+          borderDash: [2, 2],
+          borderWidth: 1,
+          tension: 0,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Cumulative Spend ($)' } },
+        x: { title: { display: true, text: 'Day of Month' } }
+      },
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+}
+// Wait for DOM to be ready
+document.addEventListener("DOMContentLoaded", () => {
+  Promise.all([
+    loadWeeklyReport(),
+    loadMonthlyReport()
+  ])
+  .then(() => {
+    const msg = document.getElementById("msg");
+    msg.innerText = "✅ Reports loaded successfully";
+    msg.className = "success";
+  })
+  .catch(() => {
+    const msg = document.getElementById("msg");
+    msg.innerText = "❌ Failed to load one or more reports";
+    msg.className = "error";
+  });
+});
+</script>
+</body>
+</html>

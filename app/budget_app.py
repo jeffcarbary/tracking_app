@@ -14,6 +14,7 @@ from app.extensions import db
 app = Flask(__name__)
 #import config
 app.config.from_object(Config)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 
 #Bind db to app
@@ -47,11 +48,106 @@ def create_category():
         "name": category.name,
         "color": category.color
     }), 201
+
+#add transaction page
 @app.route("/", methods=["GET"])
 def index():
     return render_template("add_transaction.html")
 
+#Report page
+@app.route("/report")
+def report_page():
+    return render_template("report.html")
 
+#Route for Report (current week/month)
+@app.route("/api/report")
+def report_data():
+    today = date.today()
+
+    # 🗓 Week starts on Friday
+    days_since_friday = (today.weekday() - 4) % 7
+    start_of_week = today - timedelta(days=days_since_friday)
+
+    # 🗓 Month starts on the 1st
+    start_of_month = today.replace(day=1)
+
+    weekly_total = (
+        Transaction.query.filter(Transaction.date >= start_of_week)
+        .with_entities(db.func.sum(Transaction.amount))
+        .scalar() or 0
+    )
+
+    monthly_total = (
+        Transaction.query.filter(Transaction.date >= start_of_month)
+        .with_entities(db.func.sum(Transaction.amount))
+        .scalar() or 0
+    )
+
+    return jsonify({
+        "week_start": str(start_of_week),
+        "month_start": str(start_of_month),
+        "weekly_total": round(weekly_total, 2),
+        "monthly_total": round(monthly_total, 2)
+    })
+
+#Monthly Report
+@app.route("/reports/monthly", methods=["GET"])
+def monthly_report():
+    today = date.today()
+    month_start = today.replace(day=1)
+    next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
+    month_end = next_month - timedelta(days=1)
+
+    # Daily totals for the current month
+    results = (
+        db.session.query(
+            func.date(Transaction.date).label("day"),
+            func.sum(Transaction.amount).label("total")
+        )
+        .filter(Transaction.date >= month_start, Transaction.date <= month_end)
+        .group_by("day")
+        .order_by("day")
+        .all()
+    )
+
+    daily_totals = {str(r.day): float(r.total) for r in results}
+    monthly_total = sum(daily_totals.values())
+
+    return jsonify({
+        "month": today.strftime("%B %Y"),
+        "monthly_total": round(monthly_total, 2),
+        "daily_totals": daily_totals
+    })
+
+# --- Weekly Report (Friday to Thursday) ---
+@app.route("/reports/weekly", methods=["GET"])
+def weekly_report():
+    today = date.today()
+
+    # Find most recent Friday as start of week
+    offset = (today.weekday() - 4) % 7  # weekday(): Mon=0 .. Sun=6, so 4 = Friday
+    week_start = today - timedelta(days=offset)
+    week_end = week_start + timedelta(days=6)
+
+    results = (
+        db.session.query(
+            func.date(Transaction.date).label("day"),
+            func.sum(Transaction.amount).label("total")
+        )
+        .filter(Transaction.date >= week_start, Transaction.date <= week_end)
+        .group_by("day")
+        .order_by("day")
+        .all()
+    )
+
+    daily_totals = {str(r.day): float(r.total) for r in results}
+    weekly_total = sum(daily_totals.values())
+
+    return jsonify({
+        "week_range": f"{week_start} to {week_end}",
+        "weekly_total": round(weekly_total, 2),
+        "daily_totals": daily_totals
+    })
 # GET all transactions
 @app.route("/transactions", methods=["GET"])
 def get_transactions():

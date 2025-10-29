@@ -4,89 +4,8 @@
   <meta charset="utf-8">
   <title>Add Transaction</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0;
-      padding: 1em;
-      background: #f7f8fa;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 480px;
-      margin: 0 auto;
-      background: white;
-      padding: 1.5em;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    h3 {
-      text-align: center;
-      color: #222;
-    }
-
-    label {
-      font-weight: 500;
-    }
-
-    input, textarea, button {
-      width: 100%;
-      box-sizing: border-box;
-      margin-top: 0.4em;
-      margin-bottom: 1.1em;
-      padding: 0.7em;
-      font-size: 1em;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 80px;
-    }
-
-    button {
-      background-color: #007bff;
-      color: white;
-      border: none;
-      font-weight: 600;
-      padding: 0.8em;
-      cursor: pointer;
-      border-radius: 6px;
-      transition: background-color 0.2s;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    #msg {
-      text-align: center;
-      font-weight: bold;
-      margin-top: 0.5em;
-    }
-
-    #msg.success {
-      color: green;
-    }
-
-    #msg.error {
-      color: red;
-    }
-
-    @media (max-width: 500px) {
-      body {
-        padding: 0.5em;
-      }
-
-      .container {
-        padding: 1em;
-      }
-    }
-  </style>
-</head>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
 <body>
   <div class="container">
     <h3>Add Transaction</h3>
@@ -110,6 +29,9 @@
     </form>
 
     <p id="msg"></p>
+    <p style="text-align: center;">
+    <a href="/report">View Reports →</a>
+    </p>
   </div>
 
   <script>

@@ -1,4 +1,9 @@
 #!/bin/sh
+set -e
+export FLASK_APP=budget_app
+export FLASK_ENV=development
+export FLASK_RUN_HOST=0.0.0.0
+
 echo "Waiting for Postgres..."
 
 until python - <<END
@@ -21,5 +26,6 @@ done
 
 echo "Postgres ready."
 flask db upgrade
-# start Flask app as a module
-exec python -m app.budget_app
+
+#flask run
+flask run --host=0.0.0.0 --reload
