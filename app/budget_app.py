@@ -60,35 +60,35 @@ def report_page():
     return render_template("report.html")
 
 #Route for Report (current week/month)
-@app.route("/api/report")
-def report_data():
-    today = date.today()
-
-    # 🗓 Week starts on Friday
-    days_since_friday = (today.weekday() - 4) % 7
-    start_of_week = today - timedelta(days=days_since_friday)
-
-    # 🗓 Month starts on the 1st
-    start_of_month = today.replace(day=1)
-
-    weekly_total = (
-        Transaction.query.filter(Transaction.date >= start_of_week)
-        .with_entities(db.func.sum(Transaction.amount))
-        .scalar() or 0
-    )
-
-    monthly_total = (
-        Transaction.query.filter(Transaction.date >= start_of_month)
-        .with_entities(db.func.sum(Transaction.amount))
-        .scalar() or 0
-    )
-
-    return jsonify({
-        "week_start": str(start_of_week),
-        "month_start": str(start_of_month),
-        "weekly_total": round(weekly_total, 2),
-        "monthly_total": round(monthly_total, 2)
-    })
+#@app.route("/api/report")
+#def report_data():
+#    today = date.today()
+#
+#    # 🗓 Week starts on Friday
+#    days_since_friday = (today.weekday() - 4) % 7
+#    start_of_week = today - timedelta(days=days_since_friday)
+#
+#    # 🗓 Month starts on the 1st
+#    start_of_month = today.replace(day=1)
+#
+#    weekly_total = (
+#        Transaction.query.filter(Transaction.date >= start_of_week)
+#        .with_entities(db.func.sum(Transaction.amount))
+#        .scalar() or 0
+#    )
+#
+#    monthly_total = (
+#        Transaction.query.filter(Transaction.date >= start_of_month)
+#        .with_entities(db.func.sum(Transaction.amount))
+#        .scalar() or 0
+#    )
+#
+#    return jsonify({
+#        "week_start": str(start_of_week),
+#        "month_start": str(start_of_month),
+#        "weekly_total": round(weekly_total, 2),
+#        "monthly_total": round(monthly_total, 2)
+#    })
 
 #Monthly Report
 @app.route("/reports/monthly", methods=["GET"])
