@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Transactions - {{ month }}/{{ year }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header-bar">
+        <h1>Transactions for {{ month }}/{{ year }}</h1>
+        <a href="/report" class="link-button">💳 View Report</a>
+    </div>
+
+    {% if transactions %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th class="amount">Amount ($)</th>
+                    <th class="category">Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td data-label="Date">{{ t.date.strftime("%Y-%m-%d") }}</td>
+                    <td data-label="Description">{{ t.description }}</td>
+                    <td class="amount" data-label="Amount ($)">{{ "%.2f"|format(t.amount) }}</td>
+                    <td class="category" data-label="Category">{{ t.category.name or "-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No transactions found for this month.</p>
+    {% endif %}
+</body>
+</html>
+

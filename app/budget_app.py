@@ -7,7 +7,7 @@ import random
 import colorsys
 import calendar
 from app.config import Config
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, extract
 import traceback
 from app.extensions import db
 
@@ -26,6 +26,20 @@ from app.db_models import Transaction, Category
 #Initialize Flask-Migrate
 migrate = Migrate(app, db)
 
+
+#Hook for transactions page
+@app.route("/transactions")
+def view_transactions():
+    today = date.today()
+    month = today.month
+    year = today.year
+
+    transactions = Transaction.query.filter(
+        extract('month', Transaction.date) == month,
+        extract('year', Transaction.date) == year
+    ).order_by(Transaction.date.desc()).all()
+
+    return render_template("transactions.html", transactions=transactions, month=month, year=year)
 
 #POST A NEW CATEGORY
 @app.route("/categories", methods=["POST"])

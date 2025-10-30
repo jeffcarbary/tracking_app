@@ -9,10 +9,10 @@
 </head>
 <body>
 <div class="container">
-  <h2>📅 Weekly & Monthly Reports</h2>
+  <h2>📅 Week & Month Reports</h2>
 
   <section class="report-section">
-    <h3>Weekly Report</h3>
+    <h3>Week Report</h3>
     <p><strong>Total:</strong> <span id="weekly_total">–</span></p>
     <p><strong>Pace:</strong> <span id="weekly_pace">–</span></p>
     <div class="chart-container">
@@ -21,9 +21,9 @@
   </section>
 
   <section class="report-section">
-    <h3>Monthly Report</h3>
+    <h3>Month Report</h3>
     <p><strong>Total:</strong> <span id="monthly_total">–</span></p>
-    <p><strong>Weekly Avg:</strong> <span id="weekly_avg">–</span></p>
+    <p><strong>Week Avg:</strong> <span id="weekly_avg">–</span></p>
     <p><strong>Pace:</strong> <span id="monthly_pace">–</span></p>
     <div class="chart-container">
       <canvas id="monthlyChart"></canvas>
@@ -32,6 +32,9 @@
 
   <p id="msg" class="loading">Loading report...</p>
   <button onclick="window.location.href='/'">← Back to Add Transaction</button>
+  <p style="margin-top: 20px;">
+  <a href="/transactions" class="link-button">💳 View This Month’s Transactions</a>
+   </p>
 </div>
 
 <script>
@@ -45,7 +48,7 @@ function today() { return new Date(NOW); }
 // ============================================================
 // 💰 BUDGET HELPERS
 // ============================================================
-function getWeeklyBudget(todayDate = today()) {
+function getWeekBudget(todayDate = today()) {
   // We define Friday as day 5 (0 = Sunday)
   const day = todayDate.getDay();
   const diffToFri = (day >= 5) ? day - 5 : day + 2;
@@ -73,24 +76,24 @@ function getWeeklyBudget(todayDate = today()) {
   return WEEKLY_BUDGET;
 }
 
-function getMonthlyBudget(todayDate = today()) {
+function getMonthBudget(todayDate = today()) {
   const daysInMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0).getDate();
   return 800 * 4 + 100 * (daysInMonth - 28);
 }
 
-const WEEKLY_BUDGET = getWeeklyBudget();
-const MONTHLY_BUDGET = getMonthlyBudget();
+const WEEKLY_BUDGET = getWeekBudget();
+const MONTHLY_BUDGET = getMonthBudget();
 
 // ============================================================
 // 🚀 MAIN LOADERS
 // ============================================================
 document.addEventListener("DOMContentLoaded", () => {
-  loadWeeklyReport();
-  loadMonthlyReport();
+  loadWeekReport();
+  loadMonthReport();
 });
 
 // ---------------- WEEKLY REPORT ----------------
-async function loadWeeklyReport() {
+async function loadWeekReport() {
   try {
     const res = await fetch("/reports/weekly");
     const data = await res.json();
@@ -109,7 +112,7 @@ async function loadWeeklyReport() {
     paceElem.innerText = `${pctOfBudget}% of $${WEEKLY_BUDGET} — on pace for $${projectedSpend.toFixed(0)} (${diff > 0 ? `❌ $${diff.toFixed(0)} over` : `✅ $${Math.abs(diff).toFixed(0)} under`})`;
     paceElem.style.color = diff > 0 ? "red" : "green";
 
-    drawWeeklyChart(data);
+    drawWeekChart(data);
   } catch (err) {
     console.error(err);
     document.getElementById("msg").innerText = "❌ Failed to load weekly report";
@@ -117,7 +120,7 @@ async function loadWeeklyReport() {
   }
 }
 
-function drawWeeklyChart(data) {
+function drawWeekChart(data) {
   const ctx = document.getElementById('weeklyChart').getContext('2d');
   const todayDate = today();
 
@@ -147,7 +150,7 @@ function drawWeeklyChart(data) {
   const avgDaily = daysSoFar ? (cumulative / daysSoFar) : 0;
   const projectedLine = Array.from({ length: 7 }, (_, i) => avgDaily * (i + 1));
 
-  // ---- Weekly budget line ----
+  // ---- Week budget line ----
   const weeklyBudgetLine = new Array(7).fill(WEEKLY_BUDGET);
 
   new Chart(ctx, {
@@ -197,7 +200,7 @@ function drawWeeklyChart(data) {
 }
 
 // ---------------- MONTHLY REPORT ----------------
-async function loadMonthlyReport() {
+async function loadMonthReport() {
   try {
     const res = await fetch("/reports/monthly");
     const data = await res.json();
@@ -222,7 +225,7 @@ async function loadMonthlyReport() {
    
    
 
-    drawMonthlyChart(data);
+    drawMonthChart(data);
   } catch (err) {
     console.error(err);
     document.getElementById("msg").innerText = "❌ Failed to load monthly report";
@@ -230,7 +233,7 @@ async function loadMonthlyReport() {
   }
 }
 
-function drawMonthlyChart(data) {
+function drawMonthChart(data) {
   const ctx = document.getElementById('monthlyChart').getContext('2d');
   const todayDate = today();
   const dayOfMonth = todayDate.getDate();
@@ -304,8 +307,8 @@ function drawMonthlyChart(data) {
 // Wait for DOM to be ready
 document.addEventListener("DOMContentLoaded", () => {
   Promise.all([
-    loadWeeklyReport(),
-    loadMonthlyReport()
+    loadWeekReport(),
+    loadMonthReport()
   ])
   .then(() => {
     const msg = document.getElementById("msg");

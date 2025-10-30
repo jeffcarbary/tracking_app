@@ -102,3 +102,89 @@ canvas {
 .report-section {
   margin-bottom: 40px;
 }
+.link-button {
+  display: inline-block;
+  background: #007bff;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.link-button:hover {
+  background: #0056b3;
+}
+
+.amount {
+    text-align: left;
+}
+
+.category {
+    text-align: right;  /* aligns category text to the right */
+}
+/* -----------------------------
+   Squeezed, full-text, zoomed-in table
+----------------------------- */
+
+table {
+    width: auto;                 /* let table size to content */
+    border-collapse: collapse;
+    font-size: 32px;             /* huge text */
+    font-weight: bold;
+    background: #fff;
+    margin: 0;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+/* Headers and cells */
+th, td {
+    padding: 0px 1px;            /* almost no spacing */
+    border: 1px solid #ccc;      /* optional minimal borders */
+    vertical-align: middle;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Right-align numeric columns */
+.amount, .category {
+    text-align: right;
+}
+
+/* Optional hover effect */
+tbody tr:hover {
+    background-color: #f0f8ff;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    thead tr { display: none; }
+    tr { margin-bottom: 2px; border-bottom: 1px solid #ccc; }
+    td {
+        text-align: right;
+        padding-left: 45%;
+        font-size: 24px;
+        position: relative;
+    }
+    td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 2px;
+        width: 45%;
+        font-weight: bold;
+        text-align: left;
+    }
+}
+/* Date column - tiny padding after date */
+th:first-child,
+td:first-child {
+    padding-left: 1px;   /* minimal left padding */
+    padding-right: 4px;  /* tiny space after date */
+    text-align: left;
+}
+
