@@ -15,6 +15,11 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 RUN apt-get update && apt-get install -y postgresql-client
 
+# Install tzdata and set timezone to Central Time
+RUN apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/America/Chicago /etc/localtime && \
+    echo "America/Chicago" > /etc/timezone
+
 # Make entrypoint executable
 RUN chmod +x ./entrypoint.sh
 
