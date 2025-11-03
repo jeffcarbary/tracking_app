@@ -48,5 +48,4 @@ def export_category_chart(category, start_date, end_date):
     # plt.savefig(f"{category}_{start_date}_to_{end_date}.png")
 
 # Example usage
-export_category_chart("Grocery", "2025-09-01", "2025-09-26")
-
+export_category_chart("Schoolcafe", "2025-07-01", "2025-10-31")

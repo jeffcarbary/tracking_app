@@ -4,12 +4,18 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime, date, timedelta
 import random
+import time
 import colorsys
 import calendar
 from app.config import Config
 from sqlalchemy import func, and_, extract
 import traceback
 from app.extensions import db
+from app.utils.report_period import ReportPeriod
+from app.utils.report_queries import ReportQueries
+from app.utils.budget_utils import get_week_budget, get_month_budget
+from app.utils.charts import plot_current_week_chart, plot_current_month_chart
+import base64
 
 app = Flask(__name__)
 #import config
@@ -27,6 +33,64 @@ from app.db_models import Transaction, Category
 migrate = Migrate(app, db)
 
 
+#hook for week chart image
+@app.route("/api/charts/week")
+def api_week_chart():
+    today = date.today()
+
+    period = ReportPeriod(today)
+    week_start, week_end = period.week_range()
+
+    queries = ReportQueries(db)
+    daily_totals = queries.get_daily_totals(week_start, week_end)
+
+    #Calculate derived values
+    num_days = (week_end - week_start).days + 1
+    week_budget = get_week_budget(num_days)
+
+    #Generate chart
+    img_base64 = plot_current_week_chart(daily_totals, week_start, num_days, today, week_budget)
+
+    #Return as image
+    return (
+    base64.b64decode(img_base64),
+    200,
+    {
+        "Content-Type": "image/png",
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+    }
+    )
+
+#hook for month chart image
+@app.route("/api/charts/month")
+def api_month_chart():
+    today = date.today()
+
+    period = ReportPeriod(today)
+    month_start, month_end = period.month_range()  # full month
+
+    queries = ReportQueries(db)
+    daily_totals = queries.get_daily_totals(month_start, month_end)
+
+    # Calculate derived values
+    days_in_month = (month_end - month_start).days + 1
+    month_budget = get_month_budget(today)
+
+    # Generate chart
+    img_base64 = plot_current_month_chart(daily_totals, today, days_in_month, month_budget)
+
+    # Return as image
+    return (
+    base64.b64decode(img_base64),
+    200,
+    {
+        "Content-Type": "image/png",
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+    }
+    )
+   
 #Hook for transactions page
 @app.route("/transactions")
 def view_transactions():
@@ -71,99 +135,125 @@ def index():
 #Report page
 @app.route("/report")
 def report_page():
-    return render_template("report.html")
+    return render_template("report.html", timestamp=int(time.time()))
 
-#Route for Report (current week/month)
-#@app.route("/api/report")
-#def report_data():
-#    today = date.today()
-#
-#    # 🗓 Week starts on Friday
-#    days_since_friday = (today.weekday() - 4) % 7
-#    start_of_week = today - timedelta(days=days_since_friday)
-#
-#    # 🗓 Month starts on the 1st
-#    start_of_month = today.replace(day=1)
-#
-#    weekly_total = (
-#        Transaction.query.filter(Transaction.date >= start_of_week)
-#        .with_entities(db.func.sum(Transaction.amount))
-#        .scalar() or 0
-#    )
-#
-#    monthly_total = (
-#        Transaction.query.filter(Transaction.date >= start_of_month)
-#        .with_entities(db.func.sum(Transaction.amount))
-#        .scalar() or 0
-#    )
-#
-#    return jsonify({
-#        "week_start": str(start_of_week),
-#        "month_start": str(start_of_month),
-#        "weekly_total": round(weekly_total, 2),
-#        "monthly_total": round(monthly_total, 2)
-#    })
 
-#Monthly Report
-@app.route("/reports/monthly", methods=["GET"])
-def monthly_report():
-    today = date.today()
-    month_start = today.replace(day=1)
-    next_month = (month_start.replace(day=28) + timedelta(days=4)).replace(day=1)
-    month_end = next_month - timedelta(days=1)
+#Month Report
+@app.route("/reports/month", methods=["GET"])
+def month_report():
+    # --- Parse optional overrides ---
+    month_str = request.args.get("month")  # e.g. ?month=2025-09
+    today_str = request.args.get("today")  # e.g. ?today=2025-10-31
 
-    # Daily totals for the current month
-    results = (
-        db.session.query(
-            func.date(Transaction.date).label("day"),
-            func.sum(Transaction.amount).label("total")
-        )
-        .filter(Transaction.date >= month_start, Transaction.date <= month_end)
-        .group_by("day")
-        .order_by("day")
-        .all()
-    )
+    # Determine target date
+    if month_str:
+        try:
+            year, month = map(int, month_str.split("-"))
+            today = date(year, month, 1)
+        except ValueError:
+            return jsonify({"error": "Invalid month format. Use YYYY-MM."}), 400
+    elif today_str:
+        try:
+            today = datetime.strptime(today_str, "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+    else:
+        today = date.today()
 
-    daily_totals = {str(r.day): float(r.total) for r in results}
-    monthly_total = sum(daily_totals.values())
+    # --- Compute month range using helper ---
+    period = ReportPeriod(today)
+    month_start, month_end = period.month_range()
 
+    # --- Query daily totals ---
+    queries = ReportQueries(db)
+
+    daily_totals = queries.get_daily_totals(month_start, month_end)
+
+    # Exclude today's total if it's zero
+    today_total = daily_totals.get(today.isoformat(), 0)
+    effective_totals = dict(daily_totals)
+    if today_total == 0:
+        effective_totals.pop(today.isoformat(), None)
+    
+    # Compute totals and days
+    month_total = sum(effective_totals.values())
+    
+    # Calculate days in current month
+    days_in_month = (today.replace(day=1) + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+    days_in_month = days_in_month.day
+    
+    # Count how many days have passed (with today excluded if 0)
+    days_so_far = len([d for d in effective_totals.keys() if date.fromisoformat(d) <= today])
+    days_so_far = max(days_so_far, 1)  # avoid divide-by-zero
+    
+    month_budget = get_month_budget(today)
+    month_projected = (month_total / days_so_far) * days_in_month if days_so_far else 0
+    month_pct = round((month_projected / month_budget) * 100, 1)
+    month_diff = month_projected - month_budget
+    week_avg = (month_projected / days_in_month) * 7
+        
+
+    # --- Return JSON ---
     return jsonify({
-        "month": today.strftime("%B %Y"),
-        "monthly_total": round(monthly_total, 2),
-        "daily_totals": daily_totals
+        "month": month_start.strftime("%B %Y"),
+        "start_date": str(month_start),
+        "end_date": str(month_end),
+        "month_total": round(month_total, 2),
+        "daily_totals": daily_totals,
+        "days_in_month" : days_in_month,
+        "month_budget" : month_budget,
+        "month_projected" : month_projected,
+        "month_pct" : month_pct,
+        "month_diff" : month_diff,
+        "week_avg" : week_avg, 
+        "days_so_far" : days_so_far
     })
 
-# --- Weekly Report (Friday to Thursday) ---
-@app.route("/reports/weekly", methods=["GET"])
-def weekly_report():
+# --- Week Report (Friday to Thursday) ---
+@app.route("/reports/week", methods=["GET"])
+def get_week_report():
     today = date.today()
+    period = ReportPeriod(today)
+    week_start, week_end = period.week_range()
 
-    # Find most recent Friday as start of week
-    offset = (today.weekday() - 4) % 7  # weekday(): Mon=0 .. Sun=6, so 4 = Friday
-    week_start = today - timedelta(days=offset)
-    week_end = week_start + timedelta(days=6)
+    queries = ReportQueries(db)
+    daily_totals = queries.get_daily_totals(week_start, week_end)
+    num_week_days = (week_end - week_start).days + 1
 
-    results = (
-        db.session.query(
-            func.date(Transaction.date).label("day"),
-            func.sum(Transaction.amount).label("total")
-        )
-        .filter(Transaction.date >= week_start, Transaction.date <= week_end)
-        .group_by("day")
-        .order_by("day")
-        .all()
-    )
+    # Exclude today's zero value from calculations
+    today_total = daily_totals.get(today.isoformat(), 0)
+    effective_totals = dict(daily_totals)
+    if today_total == 0:
+        effective_totals.pop(today.isoformat(), None)
 
-    daily_totals = {str(r.day): float(r.total) for r in results}
-    weekly_total = sum(daily_totals.values())
+    week_total = sum(effective_totals.values())
 
+    # Count only days that have occurred (and have data if today is excluded)
+    days_so_far = len([d for d in effective_totals.keys() if date.fromisoformat(d) <= today])
+    days_so_far = max(days_so_far, 1)  # avoid division by zero
+
+    week_budget = get_week_budget(num_week_days)
+    week_projected = (week_total / days_so_far) * num_week_days if days_so_far else 0
+    week_pct = round((week_projected / week_budget) * 100, 1)
+    week_diff = week_projected - week_budget
+
+    # ================== RETURN JSON ==================
     return jsonify({
-        "week_range": f"{week_start} to {week_end}",
-        "weekly_total": round(weekly_total, 2),
-        "daily_totals": daily_totals
+        "week_start": str(week_start),
+        "week_end": str(week_end),
+        "today": str(today),
+        "num_week_days": num_week_days,
+        "week_total": round(week_total, 2),
+        "week_budget": round(week_budget, 2),
+        "week_projected": round(week_projected, 2),
+        "week_pct": week_pct,
+        "week_diff": round(week_diff, 2),
+        "daily_totals": {str(k): float(v) for k, v in daily_totals.items()}, 
+        "days_so_far": days_so_far
     })
+
 # GET all transactions
-@app.route("/transactions", methods=["GET"])
+@app.route("/api/transactions", methods=["GET"])
 def get_transactions():
     try:
         # Optional query parameters

@@ -176,7 +176,7 @@ def export_transactions(
 ):
     """Fetch transactions, summarize by category, and export to Google Sheets"""
 
-    BASE_URL = f"{API_BASE_URL}/transactions"
+    BASE_URL = f"{API_BASE_URL}/api/transactions"
     params = {"start_date": start_date, "end_date": end_date}
 
     # ------------------------
