@@ -219,7 +219,7 @@ html_content = Template(html_template).render(
 
 # ===================== SEND EMAIL =====================
 msg = MIMEMultipart('related')
-msg['Subject'] = f"📊 Monthly Budget Report — {month_start.strftime('%B %Y')}"
+msg['Subject'] = f"📊 End of Month Budget Report — {month_start.strftime('%B %Y')}"
 msg['From'] = SMTP_USER
 msg['To'] = ", ".join(TO_EMAIL)
 

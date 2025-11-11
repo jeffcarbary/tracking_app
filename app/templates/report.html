@@ -36,6 +36,9 @@
   <p style="margin-top: 20px;">
     <a href="/transactions" class="link-button">💳 View This Month’s Transactions</a>
   </p>
+  <p style="text-align:center; margin-top:20px;">
+  <a href="/category_trends" class="link-button">📈 View Category Trends</a>
+  </p>
 </div>
 
 <script>
@@ -222,6 +225,8 @@ function drawWeekChart(data) {
   // ======== Actual cumulative spend ========
   const dailyTotals = data.daily_totals || {};
   let cumulative = 0;
+  console.log(daysSoFar)
+  console.log(dailyTotals)
   const actualSpend = Array.from({ length: numDays }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);

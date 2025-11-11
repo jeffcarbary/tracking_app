@@ -32,6 +32,30 @@ from app.db_models import Transaction, Category
 #Initialize Flask-Migrate
 migrate = Migrate(app, db)
 
+#hook for Category trend
+@app.route("/category_trends")
+def category_trends_page():
+    return render_template("category_trends.html")
+
+@app.route("/api/charts/category_trend/<category>")
+def api_category_trend(category):
+    today = date.today()
+    start_date = today - timedelta(days=90)
+
+    queries = ReportQueries(db)
+    weekly_data = queries.get_weekly_totals_for_category(category, start_date, today)
+
+    # Format data for JSON output
+    labels = [str(week_start) for week_start in weekly_data.keys()]
+    totals = list(weekly_data.values())
+
+    return jsonify({
+        "category": category,
+        "labels": labels,
+        "totals": totals,
+        "start_date": str(start_date),
+        "end_date": str(today),
+    })
 
 #hook for week chart image
 @app.route("/api/charts/week")
@@ -367,6 +391,11 @@ def add_transaction():
         amount = data.get("amount")
         date_value = data.get("date")  # optional, e.g., "2025-10-25"
         category_name = data.get("category")  # can be None
+        # Strip whitespace safely
+        if isinstance(description, str):
+            description = description.strip()
+        if isinstance(category_name, str):
+            category_name = category_name.strip()
         # ------------------------
         # Validate inputs
         # ------------------------

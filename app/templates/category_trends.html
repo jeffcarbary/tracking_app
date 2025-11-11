@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Category Trends</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { max-width: 800px; margin: 40px auto; font-family: sans-serif; }
+        .form-group { margin-bottom: 20px; }
+        canvas { margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>📊 Category Spending Trends</h1>
+    <p>View weekly totals for the past 90 days by category.</p>
+
+    <div class="form-group">
+        <label for="categoryInput">Enter a category:</label>
+        <input id="categoryInput" type="text" placeholder="e.g. groceries, gas" />
+        <button onclick="loadChart()">Show Trend</button>
+    </div>
+
+    <div class="chart-container">
+      <canvas id="categoryTrendChart" width="700" height="400"></canvas>
+    </div>
+
+    <script>
+    async function loadChart() {
+        const category = document.getElementById('categoryInput').value.trim();
+        if (!category) return alert("Please enter a category");
+
+        const resp = await fetch(`/api/charts/category_trend/${category}`);
+        if (!resp.ok) return alert("No data found for that category");
+
+        const data = await resp.json();
+
+        const ctx = document.getElementById("categoryTrendChart").getContext("2d");
+        if (window.categoryChart) window.categoryChart.destroy();
+
+        window.categoryChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: `${data.category} - Weekly Totals`,
+                    data: data.totals,
+                    backgroundColor: "rgba(54, 162, 235, 0.6)",
+                    borderColor: "rgba(54, 162, 235, 1)",
+                    borderWidth: 1,
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: "Amount ($)" } },
+                    x: { title: { display: true, text: "Week Starting" } }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `90-Day Weekly Totals for "${data.category}"`
+                    },
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+    </script>
+</body>
+</html>
+

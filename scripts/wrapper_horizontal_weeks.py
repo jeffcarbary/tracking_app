@@ -7,14 +7,8 @@ import sys
 # CONFIG
 # ------------------------
 YEAR = 2025
-MONTH = 8
-BASE_TAB_NAME = f"August_2025"
 MONTH = 11
 BASE_TAB_NAME = f"November2025"
-MONTH = 9
-BASE_TAB_NAME = f"September_2025"
-MONTH = 10
-BASE_TAB_NAME = f"October2025"
 
 
 def month_weeks_friday_to_thursday(month: int, year: int):

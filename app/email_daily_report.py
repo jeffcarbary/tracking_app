@@ -16,7 +16,8 @@ SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USER = "jeffcarbary@gmail.com"
 SMTP_PASS = "REMOVED_SECRET"  # use app password or env var
-TO_EMAIL = ["jeffcarbary@gmail.com", "deephousegenes@gmail.com"]
+#TO_EMAIL = ["jeffcarbary@gmail.com", "deephousegenes@gmail.com"]
+TO_EMAIL = ["jeffcarbary@gmail.com", "raquelcarbary@gmail.com"]
 
 API_BASE = "http://localhost:5000/reports"
 
@@ -96,7 +97,8 @@ html_content = Template(html_template).render(
 
 # ================== SEND EMAIL ==================
 msg = MIMEMultipart('related')
-msg['Subject'] = "📊 Daily Budget Report"
+msg['Subject'] = f"📊 Budget Report - {today.strftime('%A %b %-d %Y')}"
+
 msg['From'] = SMTP_USER
 msg['To'] = ", ".join(TO_EMAIL)
 
