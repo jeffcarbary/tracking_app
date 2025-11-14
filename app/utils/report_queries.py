@@ -1,5 +1,5 @@
 from sqlalchemy import func, text
-from app.db_models import Transaction
+from app.budget.models import Transaction, Category
 from datetime import timedelta
 
 

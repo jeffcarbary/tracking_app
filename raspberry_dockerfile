@@ -1,0 +1,55 @@
+jcarbary@raspberrypi:~/budget_app $ cat Dockerfile
+# Use Python 3.11 slim (ARM-compatible)
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy project files
+COPY . .
+
+# Install system dependencies in one layer
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    gfortran \
+    libopenblas-dev \
+    libpq-dev \
+    libfreetype6-dev \
+    libpng-dev \
+    libtiff-dev \
+    libjpeg-dev \
+    libopenjp2-7-dev \
+    zlib1g-dev \
+    libx11-6 \
+    libxext6 \
+    libxrender1 \
+    libxcb1 \
+    libxft2 \
+    libxinerama1 \
+    libxi6 \
+    libxrandr2 \
+    libxfixes3 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    pkg-config \
+    tzdata \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -snf /usr/share/zoneinfo/America/Chicago /etc/localtime \
+    && echo "America/Chicago" > /etc/timezone
+
+# Upgrade pip and use piwheels for Raspberry Pi prebuilt packages
+RUN pip install --upgrade pip setuptools wheel \
+    && pip config set global.extra-index-url https://www.piwheels.org/simple
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
+
+# Copy entrypoint script and make it executable
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Use entrypoint
+ENTRYPOINT ["/entrypoint.sh"]

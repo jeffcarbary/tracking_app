@@ -67,8 +67,8 @@ async function loadWeekData() {
   document.getElementById("week_total").innerText = `$${data.week_total}`;
 
   const projectedSpend = data.week_projected;
-  console.log('projectedSpend', projectedSpend)
-  console.log('days_so_far', data.days_so_far)
+  console.log('-projectedSpend', projectedSpend)
+  console.log('days_so_far-', data.days_so_far)
   const daysSoFar = data.days_so_far
   const WEEKLY_BUDGET = data.week_budget
   const pctOfBudget = ((projectedSpend / WEEKLY_BUDGET) * 100).toFixed(1);
@@ -84,8 +84,10 @@ async function loadWeekData() {
 // ===================== MONTHLY REPORT =====================
 async function loadMonthData() {
   try {
+    console.log('here')
     const res = await fetch("/reports/month");
     const data = await res.json();
+    console.log('month_data', data)
 
     document.getElementById("month_total").innerText = `$${data.month_total}`;
 
@@ -99,6 +101,7 @@ async function loadMonthData() {
     const diff = data.month_diff
 
     const weekAvg = data.week_avg 
+    console.log('weekAvg', weekAvg)
     document.getElementById("week_avg").innerText = `$${weekAvg.toFixed(2)}`;
 
     const paceElem = document.getElementById("month_pace");

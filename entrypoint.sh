@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-export FLASK_APP=budget_app
+export FLASK_APP=run:create_app
 export FLASK_ENV=development
 export FLASK_RUN_HOST=0.0.0.0
 

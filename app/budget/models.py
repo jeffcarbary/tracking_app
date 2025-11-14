@@ -1,9 +1,6 @@
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import CheckConstraint
 from datetime import date
-from app.extensions import db 
-
-
+from sqlalchemy import CheckConstraint
+from app.extensions import db
 
 class Category(db.Model):
     __tablename__ = "categories"
@@ -13,12 +10,10 @@ class Category(db.Model):
 
     __table_args__ = (
         CheckConstraint("length(name) > 0", name="check_category_name_not_empty"),
-        {"extend_existing": True} 
     )
 
 class Transaction(db.Model):
     __tablename__ = "transactions"
-    __table_args__ = {"extend_existing": True}  
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Numeric(10,2), nullable=False)
@@ -30,8 +25,12 @@ class Transaction(db.Model):
         return {
             "id": self.id,
             "description": self.description,
-            "amount": float(self.amount),  # convert Decimal -> float
-            "category": self.category,
+            "amount": float(self.amount),
+            "category": {
+                "id": self.category.id if self.category else None,
+                "name": self.category.name if self.category else None,
+                "color": self.category.color if self.category else None
+            },
             "category_id": self.category_id,
-            "date": self.date.strftime("%Y-%m-%d")  # convert date -> string
+            "date": self.date.strftime("%Y-%m-%d")
         }
