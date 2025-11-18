@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reports - {{ user.username }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- annotation plugin (optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
+
+    <style>
+        body { font-family: Arial, sans-serif; padding: 18px; }
+        .tabs { display:flex; gap: 8px; margin-bottom: 12px; }
+        .tab-btn { padding: 8px 14px; border-radius: 8px; background:#f0f0f0; cursor:pointer; border:1px solid #ddd; }
+        .tab-btn.active { background:#fff; border-bottom: 2px solid #007bff; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+        .panel { display: none; margin-top: 12px; }
+        .panel.active { display: block; }
+        .selector-row { display:flex; gap: 8px; align-items:center; margin-bottom: 12px; flex-wrap:wrap; }
+        .averages { margin-bottom: 14px; background:#fafafa; padding:10px; border-radius:8px; border:1px solid #eee; }
+        .charts-grid { display:grid; gap:16px; grid-template-columns: 1fr; }
+        @media(min-width:900px) { .charts-grid { grid-template-columns: 1fr 1fr 1fr; } }
+        .chart-card { padding: 10px; background:#fff; border-radius:8px; border:1px solid #eee; height: 320px; display:flex; flex-direction:column; }
+        canvas { flex:1 1 auto; width:100% !important; }
+        .small { font-size:0.95rem; color:#555; }
+        .btn { padding:8px 12px; border-radius:8px; border:1px solid #ccc; background:#fff; cursor:pointer; }
+    </style>
+</head>
+<body>
+    <h2>Reports — {{ user.username|capitalize }}</h2>
+
+    <div class="tabs">
+        <div id="tab-week" class="tab-btn active" role="button">Weekly Report</div>
+        <div id="tab-month" class="tab-btn" role="button">Monthly Report</div>
+    </div>
+
+    <!-- WEEK PANEL -->
+    <div id="panel-week" class="panel active">
+        <form class="selector-row" method="get" action="{{ url_for('nutrition.reports', username=user.username) }}">
+            <label for="week">Select week:</label>
+            <input type="week" id="week" name="week" value="{{ selected_week }}">
+            <button type="submit" class="btn">Go</button>
+        </form>
+
+        <div class="averages small">
+            <strong>Averages (days with data):</strong>
+            Calories: {{ week_avg_cal }} kcal —
+            Protein: {{ week_avg_pro }} g —
+            Fiber: {{ week_avg_fib }} g
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="small">Daily Calories</div>
+                <canvas id="weekCalChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="small">Daily Protein</div>
+                <canvas id="weekProChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="small">Daily Fiber</div>
+                <canvas id="weekFibChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- MONTH PANEL -->
+    <div id="panel-month" class="panel">
+        <form class="selector-row" method="get" action="{{ url_for('nutrition.reports', username=user.username) }}">
+            <label for="month">Select month:</label>
+            <input type="month" id="month" name="month" value="{{ selected_month }}">
+            <button type="submit" class="btn">Go</button>
+        </form>
+
+        <div class="averages small">
+            <strong>Averages (days with data):</strong>
+            Calories: {{ month_avg_cal }} kcal —
+            Protein: {{ month_avg_pro }} g —
+            Fiber: {{ month_avg_fib }} g
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="small">Daily Calories</div>
+                <canvas id="monthCalChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="small">Daily Protein</div>
+                <canvas id="monthProChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="small">Daily Fiber</div>
+                <canvas id="monthFibChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Data passed from Flask
+    const weekLabels = {{ week_labels|tojson }};
+    const weekCal = {{ week_cal|tojson }};
+    const weekPro = {{ week_pro|tojson }};
+    const weekFib = {{ week_fib|tojson }};
+    const weekGoalCal = {{ week_goal_cal_line|tojson }};
+    const weekGoalPro = {{ week_goal_pro_line|tojson }};
+    const weekGoalFib = {{ week_goal_fib_line|tojson }};
+
+    const monthLabels = {{ month_labels|tojson }};
+    const monthCal = {{ month_cal|tojson }};
+    const monthPro = {{ month_pro|tojson }};
+    const monthFib = {{ month_fib|tojson }};
+    const monthGoalCal = {{ month_goal_cal_line|tojson }};
+    const monthGoalPro = {{ month_goal_pro_line|tojson }};
+    const monthGoalFib = {{ month_goal_fib_line|tojson }};
+
+    // Chart holders
+    let charts = {};
+
+    function createBarWithGoal(ctx, labels, data, goalLine, title, color) {
+        return new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: title, data: data, backgroundColor: color },
+                    { label: 'Daily Goal', data: goalLine, type: 'line', borderColor: 'red', borderWidth: 2, fill: false, tension: 0.0 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: { display: false }
+                },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+
+    function renderWeekCharts() {
+        if (charts.weekCal) return; // already rendered
+
+        charts.weekCal = createBarWithGoal(
+            document.getElementById('weekCalChart').getContext('2d'),
+            weekLabels, weekCal, weekGoalCal, 'Calories', 'rgba(0,123,255,0.75)'
+        );
+
+        charts.weekPro = createBarWithGoal(
+            document.getElementById('weekProChart').getContext('2d'),
+            weekLabels, weekPro, weekGoalPro, 'Protein', 'rgba(40,167,69,0.75)'
+        );
+
+        charts.weekFib = createBarWithGoal(
+            document.getElementById('weekFibChart').getContext('2d'),
+            weekLabels, weekFib, weekGoalFib, 'Fiber', 'rgba(255,193,7,0.8)'
+        );
+    }
+
+    function renderMonthCharts() {
+        if (charts.monthCal) return;
+
+        charts.monthCal = createBarWithGoal(
+            document.getElementById('monthCalChart').getContext('2d'),
+            monthLabels, monthCal, monthGoalCal, 'Calories', 'rgba(0,123,255,0.75)'
+        );
+
+        charts.monthPro = createBarWithGoal(
+            document.getElementById('monthProChart').getContext('2d'),
+            monthLabels, monthPro, monthGoalPro, 'Protein', 'rgba(40,167,69,0.75)'
+        );
+
+        charts.monthFib = createBarWithGoal(
+            document.getElementById('monthFibChart').getContext('2d'),
+            monthLabels, monthFib, monthGoalFib, 'Fiber', 'rgba(255,193,7,0.8)'
+        );
+    }
+
+    // Tab handling (lazy render)
+    document.getElementById('tab-week').addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel-week').classList.add('active');
+        renderWeekCharts();
+    });
+
+    document.getElementById('tab-month').addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel-month').classList.add('active');
+        renderMonthCharts();
+    });
+
+    // initial render: render week charts by default
+    document.addEventListener('DOMContentLoaded', function() {
+        renderWeekCharts();
+    });
+    </script>
+</body>
+</html>

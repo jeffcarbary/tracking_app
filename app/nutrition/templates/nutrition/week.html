@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Weekly Nutrition Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial; padding:20px; }
+        .chart-container { margin-bottom: 40px; }
+        .avg-box { padding:10px; background:#eee; border-radius:8px; margin-bottom:20px; }
+    </style>
+</head>
+<body>
+
+<h1>Weekly Report ({{ start.strftime("%b %d") }} – {{ end.strftime("%b %d") }})</h1>
+
+<form method="get">
+    <label>Select week:</label>
+    <input type="week" name="week" value="{{ iso_year }}-W{{ '%02d'|format(iso_week) }}">
+    <button type="submit">Go</button>
+</form>
+
+<div class="avg-box">
+    <strong>Averages (days with data only):</strong><br>
+    Calories: {{ avg_cal|round(0) }}<br>
+    Protein: {{ avg_pro|round(0) }}g<br>
+    Fiber: {{ avg_fib|round(0) }}g
+</div>
+
+<div class="chart-container">
+    <h2>Calories</h2>
+    <canvas id="calChart"></canvas>
+</div>
+
+<div class="chart-container">
+    <h2>Protein</h2>
+    <canvas id="proChart"></canvas>
+</div>
+
+<div class="chart-container">
+    <h2>Fiber</h2>
+    <canvas id="fibChart"></canvas>
+</div>
+
+<script>
+const labels = {{ labels|tojson }};
+const calories = {{ calories|tojson }};
+const protein = {{ protein|tojson }};
+const fiber = {{ fiber|tojson }};
+
+const calGoal = {{ user.calorie_goal }};
+const proGoal = {{ user.protein_goal }};
+const fibGoal = {{ user.fiber_goal }};
+
+function buildChart(id, label, data, goal) {
+    return new Chart(document.getElementById(id), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: label,
+                data: data,
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true }},
+            plugins: {
+                annotation: {
+                    annotations: {
+                        goalLine: {
+                            type: 'line',
+                            yMin: goal,
+                            yMax: goal,
+                            borderWidth: 2
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+buildChart("calChart", "Calories", calories, calGoal);
+buildChart("proChart", "Protein", protein, proGoal);
+buildChart("fibChart", "Fiber", fiber, fibGoal);
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
+
+</body>
+</html>

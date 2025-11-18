@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Nutrition Entry</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f2f2;
+            margin: 0;
+            padding: 1rem;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .form-card, .entries-card {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            flex: 1 1 300px;
+            max-width: 450px;
+        }
+
+        label {
+            display: block;
+            margin-top: 0.5rem;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        input[type="time"],
+        input[list] {
+            width: 100%;
+            padding: 0.6rem;
+            font-size: 1.1rem;
+            margin-top: 0.2rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 0.3rem;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            font-size: 1.1rem;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 0.3rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .entries-card ul {
+            list-style: none;
+            padding: 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .entries-card li {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .entries-card li button {
+            font-size: 0.9rem;
+            padding: 0.3rem 0.6rem;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                flex-direction: column;
+            }
+
+            input, button {
+                font-size: 1rem;
+            }
+
+            .entries-card ul {
+                max-height: 250px;
+            }
+        }
+    </style>
+
+    <script>
+        function useEntry(button) {
+            document.getElementById("food_name").value = button.dataset.foodName;
+            document.getElementById("amount").value = button.dataset.amount;
+            document.getElementById("amount").dataset.base = button.dataset.amount;
+            document.getElementById("unit").value = button.dataset.unit;
+            document.getElementById("calories").value = button.dataset.calories;
+            document.getElementById("calories").dataset.base = button.dataset.calories;
+            document.getElementById("protein").value = button.dataset.protein;
+            document.getElementById("protein").dataset.base = button.dataset.protein;
+            document.getElementById("fiber").value = button.dataset.fiber;
+            document.getElementById("fiber").dataset.base = button.dataset.fiber;
+        }
+
+        function preventEnterSubmit(event) {
+            if(event.key === "Enter") event.preventDefault();
+        }
+
+        function recalc() {
+            const amount = parseFloat(document.getElementById("amount").value) || 0;
+            const base = parseFloat(document.getElementById("amount").dataset.base) || 1;
+
+            ["calories", "protein", "fiber"].forEach(id => {
+                const el = document.getElementById(id);
+                const baseVal = parseFloat(el.dataset.base) || 0;
+                el.value = ((amount / base) * baseVal).toFixed(1);
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Add Nutrition Entry for {{ user.username }}</h1>
+
+    <div class="container">
+        <div class="form-card">
+            <form method="POST" onkeydown="preventEnterSubmit(event)" autocomplete="off">
+                <label for="food_name">Food:</label>
+                <input list="food_list" id="food_name" name="food_name" required>
+                <datalist id="food_list">
+                    {% for food in food_items %}
+                    <option value="{{ food.name }}"
+                            data-id="{{ food.id }}"
+                            data-base="{{ food.base_amount }}"
+                            data-calories="{{ food.calories }}"
+                            data-protein="{{ food.protein }}"
+                            data-fiber="{{ food.fiber }}">
+                    </option>
+                    {% endfor %}
+                </datalist>
+
+                <label for="amount">Amount:</label>
+                <input type="number" step="0.1" id="amount" name="amount" oninput="recalc()" required data-base="100">
+
+                <label for="unit">Unit:</label>
+                <input type="text" id="unit" name="unit" value="g">
+
+                <label for="calories">Calories:</label>
+                <input type="number" step="0.1" id="calories" name="calories" data-base="0">
+
+                <label for="protein">Protein:</label>
+                <input type="number" step="0.1" id="protein" name="protein" data-base="0">
+
+                <label for="fiber">Fiber:</label>
+                <input type="number" step="0.1" id="fiber" name="fiber" data-base="0">
+
+                <label for="date">Date:</label>
+                <input type="date" id="date" name="date">
+
+                <label for="time">Time:</label>
+                <input type="time" id="time" name="time">
+
+                <button type="submit">Add Entry</button>
+            </form>
+        </div>
+
+        <div class="entries-card">
+            <h2>Previous Entries</h2>
+            <ul>
+                {% for entry in previous_entries %}
+                <li>
+                    {{ entry.food.name }} - {{ entry.amount }}{{ entry.unit }} - {{ entry.calories }} cal
+                    <button type="button"
+                            onclick="useEntry(this)"
+                            data-food-name="{{ entry.food.name }}"
+                            data-amount="{{ entry.amount }}"
+                            data-unit="{{ entry.unit }}"
+                            data-calories="{{ entry.calories }}"
+                            data-protein="{{ entry.protein }}"
+                            data-fiber="{{ entry.fiber }}">
+                        Use
+                    </button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <a href="{{ url_for('nutrition.index', username=user.username) }}">Back to log</a>
+    <a href="{{ url_for('nutrition.delete_entries', username=user.username) }}" class="btn-delete-entry">
+                    Edit / Delete Entries
+    </a>
+</a>
+</body>
+</html>

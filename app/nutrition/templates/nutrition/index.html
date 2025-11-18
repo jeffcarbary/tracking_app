@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='nutrition.css') }}">
+    <title>Nutrition Log - {{ user.username }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/nutrition_chart.js') }}"></script>
+</head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        font-size: 24px; /* base font size larger */
+    }
+
+    h1 {
+        font-size: 2.4em; /* larger headline */
+        margin-bottom: 15px;
+    }
+
+    a {
+        display: inline-block;
+        margin-bottom: 25px;
+        font-size: 1.6em; /* larger link */
+    }
+
+    .nutrition-summary p {
+        font-size: 1.5em; /* make summary bigger */
+        margin: 5px 0;
+    }
+
+    ul {
+        margin-top: 25px;
+        padding-left: 20px;
+        font-size: 1.4em; /* larger list text */
+    }
+
+    canvas {
+        max-width: 100%;
+        height: auto;
+        margin-top: 20px;
+    }
+
+    @media (max-width: 600px) {
+        body {
+            font-size: 18px; /* even bigger base font on mobile */
+        }
+
+        h1 {
+            font-size: 2.8em; /* bigger headline */
+        }
+
+        a {
+            font-size: 1.8em; /* bigger links */
+        }
+
+        .nutrition-summary p {
+            font-size: 1.8em; /* bigger summary text */
+        }
+
+        ul {
+            font-size: 1.6em; /* bigger list items */
+        }
+    }
+</style>
+
+<body>
+    <h2>{{ user.username|capitalize }}'s Nutrition Log</h2>
+    <a href="{{ url_for('nutrition.add_entry', username=user.username) }}" class="btn-add-entry">Add New Entry</a>
+
+    <div class="nutrition-summary">
+        <p>Calories: {{ calories.current_total }} / {{ calories.current_target }}</p>
+        <p style="color: {{ 'red' if calories.current_deficit < 0 else 'green' }};">
+            {{ calories.current_deficit }} kcal
+            {% if calories.current_deficit < 0 %}
+                &#x25BC; <!-- down arrow -->
+                 {{ calories.target_catchup_time.strftime("%H:%M") }}
+            {% else %}
+                &#x25B2; <!-- up arrow -->
+            {% endif %}
+        </p>
+
+        <p>Protein: {{ protein.current_total }}g / {{ protein.goal }}g</p>
+        <p>Fiber: {{ fiber.current_total }}g  /  {{ fiber.goal }}g</p>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="calorieChart"></canvas>
+    </div>
+    
+
+    <ul>
+        {% for entry in entries %}
+            <li>
+                {{ entry.timestamp.strftime('%H:%M') }}:
+                {{ entry.amount }} {{ entry.unit }} {{ entry.food.name }}
+                ({{ entry.calories }} kcal)
+            </li>
+        {% endfor %}
+    </ul>
+
+    <div class="chart-container">
+        <canvas id="proteinChart"></canvas>
+    </div>
+     <div class="chart-container">
+        <canvas id="fiberChart"></canvas>
+    </div>
+    <a href="{{ url_for('nutrition.reports', username=user.username) }}" class="btn-reports">
+    Reports
+    </a>
+    <a href="{{ url_for('nutrition.month_view', username=user.username) }}" class="btn-month-view">
+    Monthly View
+    </a>
+    <a href="{{ url_for('nutrition.settings', username=user.username) }}" class="btn-settings">
+    User Settings
+    </a>
+
+    <script>
+        // Pass Python variables to the external JS file
+        const chartData = {
+            labels: {{ chart_labels|tojson }},
+            actual: {{ calories.actual|tojson }},
+            target: {{ calories.target|tojson }},
+            projected: {{ calories.projected|tojson }}
+        };
+        const proteinData = {
+            labels: {{ chart_labels|tojson }},
+            actual: {{ protein.actual|tojson }},
+            target: {{ protein.target|tojson }},
+            projected: {{ protein.projected|tojson }}
+        };
+        const fiberData = {
+            labels: {{ chart_labels|tojson }},
+            actual: {{ fiber.actual|tojson }},
+            target: {{ fiber.target|tojson }},
+            projected: {{ fiber.projected|tojson }}
+        };
+        
+
+    </script>
+   
+</body>
+</html>
+

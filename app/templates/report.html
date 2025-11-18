@@ -62,7 +62,7 @@ const MONTHLY_BUDGET = getMonthBudget();
 async function loadWeekData() {
   const res = await fetch("/reports/week");
   const data = await res.json();
-  console.log("Week API data:", data); 
+  console.log("Week API data:", data);
 
   document.getElementById("week_total").innerText = `$${data.week_total}`;
 
@@ -100,7 +100,7 @@ async function loadMonthData() {
     const pctOfBudget = data.month_pct
     const diff = data.month_diff
 
-    const weekAvg = data.week_avg 
+    const weekAvg = data.week_avg
     console.log('weekAvg', weekAvg)
     document.getElementById("week_avg").innerText = `$${weekAvg.toFixed(2)}`;
 
@@ -150,8 +150,10 @@ function drawMonthChart(data) {
   const avgDaily = data.month_projected / numDays;
   const projectedLine = Array.from({ length: numDays }, (_, i) => avgDaily * (i + 1));
 
-  // ======== Budget Line ========
-  const budgetLine = new Array(numDays).fill(data.month_budget);
+  // ======== Weekly cumulative budget line ========
+  const dailyBudget = data.month_budget / numDays;
+  const budgetLine = Array.from({ length: numDays }, (_, i) => dailyBudget * (i + 1));
+  const budgetLine2 = new Array(numDays).fill(data.month_budget);
 
   // ======== Draw Chart ========
   new Chart(ctx, {
@@ -179,6 +181,15 @@ function drawMonthChart(data) {
         {
           label: "Budget",
           data: budgetLine,
+          borderColor: "red",
+          borderDash: [2, 2],
+          borderWidth: 1,
+          tension: 0,
+          fill: false,
+        },
+         {
+          label: "Budget",
+          data: budgetLine2,
           borderColor: "red",
           borderDash: [2, 2],
           borderWidth: 1,
@@ -247,7 +258,9 @@ function drawWeekChart(data) {
   const projectedLine = Array.from({ length: numDays }, (_, i) => avgDaily * (i + 1));
 
   // ======== Weekly budget line ========
+  const dailyBudget = data.week_budget / numDays;
   const weeklyBudgetLine = new Array(numDays).fill(data.week_budget);
+  const weeklyBudgetLine2 = Array.from({ length: numDays }, (_, i) => dailyBudget * (i + 1));
 
   // ======== Draw Chart ========
   new Chart(ctx, {
@@ -275,6 +288,15 @@ function drawWeekChart(data) {
         {
           label: "Budget",
           data: weeklyBudgetLine,
+          borderColor: "red",
+          borderDash: [2, 2],
+          borderWidth: 1,
+          tension: 0,
+          fill: false,
+        },
+         {
+          label: "Budget",
+          data: weeklyBudgetLine2,
           borderColor: "red",
           borderDash: [2, 2],
           borderWidth: 1,

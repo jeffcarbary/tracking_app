@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Entry - {{ user.username }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='nutrition.css') }}">
+</head>
+<body>
+    <h2>{{ user.username|capitalize }} - Edit Entry</h2>
+
+    <form method="POST">
+        <p>
+            <label for="food_name">Food:</label>
+            <input type="text" id="food_name" name="food_name" value="{{ entry.food.name }}" readonly>
+        </p>
+
+        <p>
+            <label for="amount">Amount:</label>
+            <input type="number" step="0.1" id="amount" name="amount" value="{{ entry.amount }}" required>
+            <input type="text" name="unit" value="{{ entry.unit }}" size="3">
+        </p>
+
+        <p>
+            <label for="calories">Calories:</label>
+            <input type="number" step="0.1" id="calories" name="calories" value="{{ entry.calories }}">
+        </p>
+
+        <p>
+            <label for="protein">Protein (g):</label>
+            <input type="number" step="0.1" id="protein" name="protein" value="{{ entry.protein }}">
+        </p>
+
+        <p>
+            <label for="fiber">Fiber (g):</label>
+            <input type="number" step="0.1" id="fiber" name="fiber" value="{{ entry.fiber }}">
+        </p>
+
+        <p>
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" value="{{ entry.timestamp.strftime('%Y-%m-%d') }}">
+        </p>
+
+        <p>
+            <label for="time">Time:</label>
+            <input type="time" id="time" name="time" value="{{ entry.timestamp.strftime('%H:%M') }}">
+        </p>
+
+        <button type="submit">Save Changes</button>
+        <a href="{{ url_for('nutrition.delete_entries', username=user.username) }}" style="margin-left: 10px;">Cancel</a>
+    </form>
+</body>
+</html>
+

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Delete Entries - {{ user.username }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='nutrition.css') }}">
+</head>
+<body>
+    <h2>{{ user.username|capitalize }} - Delete Entries</h2>
+
+    <!-- Date selector -->
+    <form method="POST">
+        <label for="date">Select Day:</label>
+        <input type="date" id="date" name="date" value="{{ day }}">
+        <button type="submit">Show</button>
+    </form>
+
+    {% if entries %}
+        <ul>
+            {% for entry in entries %}
+                <li>
+                    {{ entry.timestamp.strftime('%H:%M') }}:
+                    {{ entry.amount }} {{ entry.unit }} of {{ entry.food.name }}
+                    (Calories: {{ entry.calories }}, Protein: {{ entry.protein }}, Fiber: {{ entry.fiber }})
+                    <form action="{{ url_for('nutrition.delete_entry', username=user.username, entry_id=entry.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" onclick="return confirm('Delete this entry?')">Delete</button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No entries for this day.</p>
+    {% endif %}
+
+    <a href="{{ url_for('nutrition.index', username=user.username) }}">Back to Nutrition Log</a>
+</body>
+</html>
+

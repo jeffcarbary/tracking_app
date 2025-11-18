@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ user.username }} - Month Nutrition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='nutrition.css') }}">
+</head>
+<body>
+    <h2>{{ user.username|capitalize }} - Month Nutrition</h2>
+
+    <!-- Month selector -->
+    <form method="POST">
+        <label for="month">Select Month:</label>
+        <input type="month" id="month" name="month" value="{{ month_str }}">
+        <button type="submit">Show</button>
+    </form>
+
+    <p>Daily {{ cal_avg|int }} kcal, Protein {{ pro_avg|int }} g, Fiber {{ fib_avg|int }} g</p>
+
+    <!-- Charts -->
+    <div class="chart-container">
+        <canvas id="calChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="proChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="fibChart"></canvas>
+    </div>
+
+    <script>
+        const chartLabels = {{ chart_labels|tojson }};
+        const calData = {{ cal_data|tojson }};
+        const proData = {{ pro_data|tojson }};
+        const fibData = {{ fib_data|tojson }};
+        const calGoal = {{ cal_goal }};
+        const proGoal = {{ pro_goal }};
+        const fibGoal = {{ fib_goal }};
+
+        function createBarChart(ctx, data, label, goal) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        { label: label, data: data, backgroundColor: 'rgba(54, 162, 235, 0.6)' },
+                        { label: 'Daily Goal', data: new Array(data.length).fill(goal),
+                          type: 'line', borderColor: 'red', borderWidth: 2, fill: false, tension: 0.1 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: { 
+                        y: { beginAtZero: true } 
+                    },
+                    plugins: {
+                        title: { display: true, text: label }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            createBarChart(document.getElementById('calChart').getContext('2d'), calData, 'Calories', calGoal);
+            createBarChart(document.getElementById('proChart').getContext('2d'), proData, 'Protein', proGoal);
+            createBarChart(document.getElementById('fibChart').getContext('2d'), fibData, 'Fiber', fibGoal);
+        });
+    </script>
+</body>
+</html>
+

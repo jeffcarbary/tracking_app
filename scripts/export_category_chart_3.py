@@ -55,4 +55,6 @@ def plot_weekly_category_totals_api(category_name, start_date, end_date):
 
 
 # Example usage
-plot_weekly_category_totals_api("Grocery", "2025-07-01", "2025-10-26")
+#plot_weekly_category_totals_api("Schoolcafe", "2025-07-01", "2025-10-31")
+#plot_weekly_category_totals_api("Grocery", "2025-07-01", "2025-10-31")
+plot_weekly_category_totals_api("Car", "2025-07-01", "2025-10-31")
