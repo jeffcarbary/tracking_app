@@ -98,9 +98,57 @@ ul {
     margin-left: 8px;
     padding: 8px 12px;
     font-size: 1.1em;
-    background: #007bff;
+    background: #6c757d;   /* gray */
     color: white;
     text-decoration: none;
     border-radius: 6px;
 }
-.btn-reports:hover { background: #0069d9; }
+.btn-reports:hover {
+    background: #5a6268;   /* darker gray on hover */
+}
+
+.btn-settings {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 8px 12px;
+    font-size: 1.1em;
+    background: #6c757d;   /* gray */
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+}
+.btn-settings:hover {
+    background: #5a6268;   /* darker gray on hover */
+}
+
+.btn-delete-entry {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.3rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-delete-entry:hover {
+    background-color: #5a6268;
+}
+
+<style>
+    /* Mobile default: full width */
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-top: 1rem;
+    }
+
+    /* Desktop: left half of screen */
+    @media (min-width: 600px) {
+        .table-container {
+            width: 50vw;   /* half the screen */
+        }
+    }
+</style>

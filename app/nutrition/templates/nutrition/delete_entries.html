@@ -4,38 +4,137 @@
     <title>Edit or Delete Entries - {{ user.username }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='nutrition.css') }}">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            font-size: 1rem;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.4rem;
+        }
+
+        form {
+            margin-bottom: 10px;
+        }
+
+        label, input[type=date], button {
+            font-size: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        th, td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #ccc;
+            font-size: 1rem;
+        }
+
+        th {
+            background: #eee;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        .actions {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .btn-delete,
+        .btn-edit-entry,
+        .btn-back {
+            padding: 6px 12px;
+            font-size: 1rem;
+            border-radius: 5px;
+            display: inline-block;
+            margin-left: 2px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            border: none;
+        }
+        .btn-delete:hover { background: #c82333; }
+
+        .btn-edit-entry {
+            background: #6c757d;
+        }
+        .btn-edit-entry:hover { background: #5a6268; }
+
+        .btn-back {
+            background: #6c757d;
+        }
+        .btn-back:hover { background: #5a6268; }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 600px) {
+            body { font-size: 0.9rem; }
+            th, td { padding: 4px 6px; font-size: 0.85rem; }
+            .btn-delete, .btn-edit-entry, .btn-back { font-size: 0.95rem; padding: 5px 10px; }
+        }
+    </style>
 </head>
 <body>
+
     <h2>{{ user.username|capitalize }} - Edit or Delete Entries</h2>
 
     <!-- Date selector -->
     <form method="POST">
-        <label for="date">Select Day:</label>
+        <label for="date">Day:</label>
         <input type="date" id="date" name="date" value="{{ day }}">
         <button type="submit">Show</button>
     </form>
 
     {% if entries %}
-        <ul>
-            {% for entry in entries %}
-                <li>
-                    {{ entry.timestamp.strftime('%H:%M') }}:
-                    {{ entry.amount }} {{ entry.unit }} of {{ entry.food.name }}
-                    (Calories: {{ entry.calories }}, Protein: {{ entry.protein }}, Fiber: {{ entry.fiber }})
-                    <form action="{{ url_for('nutrition.delete_entry', username=user.username, entry_id=entry.id) }}" method="POST" style="display:inline;">
-                        <button type="submit" onclick="return confirm('Delete this entry?')">Delete</button>
-                    </form>
-                    <a href="{{ url_for('nutrition.edit_entry', username=user.username, entry_id=entry.id) }}" class="btn-edit-entry">
-                        Edit
-                    </a>
-                </li>
-            {% endfor %}
-        </ul>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Food</th>
+                    <th>Amount</th>
+                    <th class="actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td>{{ entry.timestamp.strftime('%H:%M') }}</td>
+                    <td>{{ entry.food.name }}</td>
+                    <td>{{ entry.amount }} {{ entry.unit }}</td>
+                    <td class="actions">
+                        <a href="{{ url_for('nutrition.edit_entry', username=user.username, entry_id=entry.id) }}"
+                           class="btn-edit-entry">Edit</a>
+                        <form action="{{ url_for('nutrition.delete_entry', username=user.username, entry_id=entry.id) }}"
+                              method="POST" style="display:inline;">
+                            <button type="submit" class="btn-delete"
+                                    onclick="return confirm('Delete this entry?')">X</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
         <p>No entries for this day.</p>
     {% endif %}
 
-    <a href="{{ url_for('nutrition.index', username=user.username) }}">Back to Nutrition Log</a>
+    <a class="btn-back back-link" href="{{ url_for('nutrition.index', username=user.username) }}">← Back To Log </a>
+    <br><br><br><br>
 </body>
 </html>
-

@@ -26,7 +26,7 @@
 
         .form-card, .entries-card {
             background: #fff;
-            padding: 1rem;
+            padding: 0.8rem;
             border-radius: 0.5rem;
             box-shadow: 0 2px 5px rgba(0,0,0,0.15);
             flex: 1 1 300px;
@@ -35,9 +35,10 @@
 
         label {
             display: block;
-            margin-top: 0.5rem;
+            margin-top: 0.2rem;
+            margin-bottom: 0.1rem;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
         input[type="text"],
@@ -46,28 +47,58 @@
         input[type="time"],
         input[list] {
             width: 100%;
-            padding: 0.6rem;
-            font-size: 1.1rem;
-            margin-top: 0.2rem;
-            margin-bottom: 0.5rem;
+            padding: 0.4rem;
+            font-size: 1rem;
+            margin-top: 0.1rem;
+            margin-bottom: 0.3rem;
             border: 1px solid #ccc;
             border-radius: 0.3rem;
             box-sizing: border-box;
         }
 
+        .field-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .field-row .field-group {
+            flex: 1 1 30%;
+            min-width: 80px;
+        }
+
+        .buttons-row {
+            margin-top: 0.8rem;
+        }
+
+        button, .btn-delete-entry {
+            font-size: 1rem;
+            padding: 0.6rem 1rem;
+            border-radius: 0.3rem;
+            cursor: pointer;
+            border: none;
+        }
+
         button {
             background-color: #007bff;
             color: white;
-            font-size: 1.1rem;
-            padding: 0.6rem 1.2rem;
-            border: none;
-            border-radius: 0.3rem;
-            cursor: pointer;
-            margin-top: 0.5rem;
         }
 
         button:hover {
             background-color: #0056b3;
+        }
+
+        .btn-delete-entry {
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-delete-entry:hover {
+            background-color: #5a6268;
         }
 
         .entries-card ul {
@@ -78,7 +109,7 @@
         }
 
         .entries-card li {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
             font-size: 1.1rem;
             display: flex;
             justify-content: space-between;
@@ -90,31 +121,42 @@
             padding: 0.3rem 0.6rem;
         }
 
-        a {
-            display: block;
-            text-align: center;
-            margin-top: 1rem;
-            font-size: 1.1rem;
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
         @media (max-width: 600px) {
             .container {
                 flex-direction: column;
             }
 
-            input, button {
-                font-size: 1rem;
+            input, button, .btn-delete-entry {
+                font-size: 0.95rem;
             }
 
             .entries-card ul {
                 max-height: 250px;
             }
+
+            .buttons-row button {
+                width: 100%; /* mobile full width */
+            }
+
+            .field-row .field-group {
+                flex: 1 1 100%;
+            }
+        }
+
+        /* Desktop: make Add Entry button full width of form card */
+        @media (min-width: 601px) {
+            .buttons-row button {
+                width: 100%;
+            }
+        }
+
+        #entry_search {
+            width: 100%;
+            padding: 0.4rem;
+            font-size: 1rem;
+            margin-bottom: 0.3rem;
+            border: 1px solid #ccc;
+            border-radius: 0.3rem;
         }
     </style>
 
@@ -137,13 +179,25 @@
         }
 
         function recalc() {
-            const amount = parseFloat(document.getElementById("amount").value) || 0;
-            const base = parseFloat(document.getElementById("amount").dataset.base) || 1;
+            const amount = parseFloat(document.getElementById("amount").value);
+            if (!amount) return;
 
             ["calories", "protein", "fiber"].forEach(id => {
                 const el = document.getElementById(id);
-                const baseVal = parseFloat(el.dataset.base) || 0;
-                el.value = ((amount / base) * baseVal).toFixed(1);
+                const baseVal = parseFloat(el.dataset.base);
+                if (baseVal > 0) {
+                    const baseAmount = parseFloat(document.getElementById("amount").dataset.base) || 1;
+                    el.value = ((amount / baseAmount) * baseVal).toFixed(1);
+                }
+            });
+        }
+
+        function filterEntries() {
+            const query = document.getElementById("entry_search").value.toLowerCase();
+            const items = document.querySelectorAll(".entries-card li");
+            items.forEach(item => {
+                const name = item.querySelector("button").dataset.foodName.toLowerCase();
+                item.style.display = name.includes(query) ? "" : "none";
             });
         }
     </script>
@@ -154,34 +208,48 @@
     <div class="container">
         <div class="form-card">
             <form method="POST" onkeydown="preventEnterSubmit(event)" autocomplete="off">
-                <label for="food_name">Food:</label>
-                <input list="food_list" id="food_name" name="food_name" required>
-                <datalist id="food_list">
-                    {% for food in food_items %}
-                    <option value="{{ food.name }}"
-                            data-id="{{ food.id }}"
-                            data-base="{{ food.base_amount }}"
-                            data-calories="{{ food.calories }}"
-                            data-protein="{{ food.protein }}"
-                            data-fiber="{{ food.fiber }}">
-                    </option>
-                    {% endfor %}
-                </datalist>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label for="food_name">Food:</label>
+                        <input list="food_list" id="food_name" name="food_name" required>
+                        <datalist id="food_list">
+                            {% for food in food_items %}
+                            <option value="{{ food.name }}"
+                                    data-id="{{ food.id }}"
+                                    data-base="{{ food.base_amount }}"
+                                    data-calories="{{ food.calories }}"
+                                    data-protein="{{ food.protein }}"
+                                    data-fiber="{{ food.fiber }}">
+                            </option>
+                            {% endfor %}
+                        </datalist>
+                    </div>
 
-                <label for="amount">Amount:</label>
-                <input type="number" step="0.1" id="amount" name="amount" oninput="recalc()" required data-base="100">
+                    <div class="field-group">
+                        <label for="amount">Amount:</label>
+                        <input type="number" step="0.1" id="amount" name="amount" oninput="recalc()" required data-base="100">
+                    </div>
 
-                <label for="unit">Unit:</label>
-                <input type="text" id="unit" name="unit" value="g">
+                    <div class="field-group">
+                        <label for="unit">Unit:</label>
+                        <input type="text" id="unit" name="unit" value="g">
+                    </div>
 
-                <label for="calories">Calories:</label>
-                <input type="number" step="0.1" id="calories" name="calories" data-base="0">
+                    <div class="field-group">
+                        <label for="calories">Calories:</label>
+                        <input type="number" step="0.1" id="calories" name="calories" data-base="0">
+                    </div>
 
-                <label for="protein">Protein:</label>
-                <input type="number" step="0.1" id="protein" name="protein" data-base="0">
+                    <div class="field-group">
+                        <label for="protein">Protein:</label>
+                        <input type="number" step="0.1" id="protein" name="protein" data-base="0">
+                    </div>
 
-                <label for="fiber">Fiber:</label>
-                <input type="number" step="0.1" id="fiber" name="fiber" data-base="0">
+                    <div class="field-group">
+                        <label for="fiber">Fiber:</label>
+                        <input type="number" step="0.1" id="fiber" name="fiber" data-base="0">
+                    </div>
+                </div>
 
                 <label for="date">Date:</label>
                 <input type="date" id="date" name="date">
@@ -189,16 +257,19 @@
                 <label for="time">Time:</label>
                 <input type="time" id="time" name="time">
 
-                <button type="submit">Add Entry</button>
+                <div class="buttons-row">
+                    <button type="submit">Add Entry</button>
+                </div>
             </form>
         </div>
 
         <div class="entries-card">
             <h2>Previous Entries</h2>
+            <input type="text" id="entry_search" placeholder="Search by food name" oninput="filterEntries()">
             <ul>
                 {% for entry in previous_entries %}
                 <li>
-                    {{ entry.food.name }} - {{ entry.amount }}{{ entry.unit }} - {{ entry.calories }} cal
+                    {{ entry.food.name }} - {{ entry.amount|int }}{{ entry.unit }} - {{ entry.calories|int }} cal
                     <button type="button"
                             onclick="useEntry(this)"
                             data-food-name="{{ entry.food.name }}"
@@ -212,13 +283,14 @@
                 </li>
                 {% endfor %}
             </ul>
+
+            <div class="buttons-row">
+                <a href="{{ url_for('nutrition.delete_entries', username=user.username) }}" class="btn-delete-entry">Edit / Delete Entries</a>
+                <a href="{{ url_for('nutrition.index', username=user.username) }}" class="btn-delete-entry">Back to log</a>
+            </div>
         </div>
     </div>
-
-    <a href="{{ url_for('nutrition.index', username=user.username) }}">Back to log</a>
-    <a href="{{ url_for('nutrition.delete_entries', username=user.username) }}" class="btn-delete-entry">
-                    Edit / Delete Entries
-    </a>
-</a>
+    <br><br><br><br>
 </body>
 </html>
+

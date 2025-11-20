@@ -9,19 +9,48 @@
 
     <style>
         body { font-family: Arial, sans-serif; padding: 18px; }
+
         .tabs { display:flex; gap: 8px; margin-bottom: 12px; }
         .tab-btn { padding: 8px 14px; border-radius: 8px; background:#f0f0f0; cursor:pointer; border:1px solid #ddd; }
         .tab-btn.active { background:#fff; border-bottom: 2px solid #007bff; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+
         .panel { display: none; margin-top: 12px; }
         .panel.active { display: block; }
+
         .selector-row { display:flex; gap: 8px; align-items:center; margin-bottom: 12px; flex-wrap:wrap; }
         .averages { margin-bottom: 14px; background:#fafafa; padding:10px; border-radius:8px; border:1px solid #eee; }
         .charts-grid { display:grid; gap:16px; grid-template-columns: 1fr; }
         @media(min-width:900px) { .charts-grid { grid-template-columns: 1fr 1fr 1fr; } }
+
         .chart-card { padding: 10px; background:#fff; border-radius:8px; border:1px solid #eee; height: 320px; display:flex; flex-direction:column; }
         canvas { flex:1 1 auto; width:100% !important; }
         .small { font-size:0.95rem; color:#555; }
+
         .btn { padding:8px 12px; border-radius:8px; border:1px solid #ccc; background:#fff; cursor:pointer; }
+
+        /* Gray "Back to log" button */
+        .btn-back-log {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        .btn-back-log:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 16px;
+        }
     </style>
 </head>
 <body>
@@ -61,6 +90,11 @@
                 <canvas id="weekFibChart"></canvas>
             </div>
         </div>
+
+        <!-- Back to log button -->
+        <div class="btn-container">
+            <a href="{{ url_for('nutrition.index', username=user.username) }}" class="btn-back-log">Back to log</a>
+        </div>
     </div>
 
     <!-- MONTH PANEL -->
@@ -92,7 +126,13 @@
                 <canvas id="monthFibChart"></canvas>
             </div>
         </div>
+
+        <!-- Back to log button -->
+        <div class="btn-container">
+            <a href="{{ url_for('nutrition.index', username=user.username) }}" class="btn-back-log">Back to log</a>
+        </div>
     </div>
+    <br><br><br><br>
 
     <script>
     // Data passed from Flask
@@ -138,7 +178,7 @@
     }
 
     function renderWeekCharts() {
-        if (charts.weekCal) return; // already rendered
+        if (charts.weekCal) return;
 
         charts.weekCal = createBarWithGoal(
             document.getElementById('weekCalChart').getContext('2d'),

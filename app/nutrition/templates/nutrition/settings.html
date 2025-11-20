@@ -20,9 +20,34 @@
             margin-top: 4px;
             box-sizing: border-box;
         }
-        button {
+
+        /* Save button larger */
+        button[type="submit"] {
             margin-top: 18px;
-            padding: 8px 14px;
+            padding: 10px 18px; /* bigger padding */
+            font-size: 1.2rem;  /* bigger font */
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* Back button styles */
+        .btn-back {
+            padding: 6px 12px;
+            font-size: 1rem;
+            border-radius: 5px;
+            display: inline-block;
+            margin-left: 2px;
+            text-decoration: none;
+            color: white;
+            background-color: #6c757d; /* gray background */
+        }
+        .btn-back:hover {
+            background-color: #5a6268; /* darker gray on hover */
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 12px;
         }
     </style>
 </head>
@@ -65,7 +90,8 @@
     </form>
 
     <br>
-    <a href="{{ url_for('nutrition.index', username=user.username) }}">Back to Nutrition Log</a>
+    <a class="btn-back back-link" href="{{ url_for('nutrition.index', username=user.username) }}">← Back To Log</a>
+    <br><br><br><br>
 
 </body>
 </html>

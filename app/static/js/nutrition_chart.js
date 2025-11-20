@@ -20,7 +20,8 @@ document.addEventListener("DOMContentLoaded", function() {
             datasets: [
                 { label: 'Actual', data: chartData.actual, borderColor: 'blue', fill: false, tension: 0.1 },
                 { label: 'Target', data: chartData.target, borderColor: 'purple', borderDash: [5,5], fill: false, tension: 0.1 },
-                { label: 'Projected', data: chartData.projected, borderColor: 'green', borderDash: [5,2], fill: false, tension: 0.1 }
+                { label: 'Projected', data: chartData.projected, borderColor: 'green', borderDash: [5,2], fill: false, tension: 0.1 },
+                { label: 'Yesterday', data: chartData.yesterday, borderColor: 'orange', fill: false }
             ]
         },
         options: {
@@ -46,9 +47,10 @@ document.addEventListener("DOMContentLoaded", function() {
             data: {
                 labels: proteinData.labels,
                 datasets: [
-                    { label: 'Actual Protein', data: proteinData.actual, borderWidth: 3 },
-                    { label: 'Target Protein', data: proteinData.target, borderWidth: 3, borderDash: [5, 5] },
-                    { label: 'Projected Protein', data: proteinData.projected, borderWidth: 2 }
+                    { label: 'Actual', data: proteinData.actual, borderColor: 'blue', fill: false },
+                    { label: 'Target', data: proteinData.target, borderColor: 'green', borderDash: [5,5], fill: false },
+                    { label: 'Projected', data: proteinData.projected, borderColor: 'purple', fill: false },
+                    { label: 'Yesterday', data: proteinData.yesterday, borderColor: 'orange', fill: false }
                 ]
             },
             options: {
@@ -75,9 +77,10 @@ document.addEventListener("DOMContentLoaded", function() {
             data: {
                 labels: fiberData.labels,
                 datasets: [
-                    { label: 'Actual Fiber', data: fiberData.actual, borderWidth: 3 },
-                    { label: 'Target Fiber', data: fiberData.target, borderWidth: 3, borderDash: [5, 5] },
-                    { label: 'Projected Fiber', data: fiberData.projected, borderWidth: 2 }
+                    { label: 'Actual', data: fiberData.actual, borderColor: 'blue', fill: false },
+                    { label: 'Target', data: fiberData.target, borderColor: 'green', borderDash: [5,5], fill: false },
+                    { label: 'Projected', data: fiberData.projected, borderColor: 'purple', fill: false },
+                    { label: 'Yesterday', data: fiberData.yesterday, borderColor: 'orange', fill: false }
                 ]
             },
             options: {
@@ -96,4 +99,3 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
-

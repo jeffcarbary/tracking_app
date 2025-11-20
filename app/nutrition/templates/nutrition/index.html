@@ -6,67 +6,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="{{ url_for('static', filename='js/nutrition_chart.js') }}"></script>
-</head>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-        font-size: 24px; /* base font size larger */
-    }
-
-    h1 {
-        font-size: 2.4em; /* larger headline */
-        margin-bottom: 15px;
-    }
-
-    a {
-        display: inline-block;
-        margin-bottom: 25px;
-        font-size: 1.6em; /* larger link */
-    }
-
-    .nutrition-summary p {
-        font-size: 1.5em; /* make summary bigger */
-        margin: 5px 0;
-    }
-
-    ul {
-        margin-top: 25px;
-        padding-left: 20px;
-        font-size: 1.4em; /* larger list text */
-    }
-
-    canvas {
-        max-width: 100%;
-        height: auto;
-        margin-top: 20px;
-    }
-
-    @media (max-width: 600px) {
+    <style>
         body {
-            font-size: 18px; /* even bigger base font on mobile */
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            font-size: 24px;
         }
 
-        h1 {
-            font-size: 2.8em; /* bigger headline */
+        h1, h2 {
+            font-size: 2.4em;
+            margin-bottom: 15px;
         }
 
         a {
-            font-size: 1.8em; /* bigger links */
+            display: inline-block;
+            margin-bottom: 25px;
+            font-size: 1.6em;
         }
 
         .nutrition-summary p {
-            font-size: 1.8em; /* bigger summary text */
+            font-size: 1.5em;
+            margin: 5px 0;
         }
 
-        ul {
-            font-size: 1.6em; /* bigger list items */
+        canvas {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
         }
-    }
-</style>
 
+        /* Table styling */
+        .table-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.4rem;
+            min-width: 300px;
+        }
+
+        th, td {
+            padding: 4px 6px;
+            border-bottom: 1px solid #ccc;
+            text-align: left;
+        }
+
+        th {
+            background-color: #eee;
+            font-weight: bold;
+        }
+
+        /* Edit/Delete button */
+        .btn-delete-entry {
+            display: inline-block;
+            padding: 8px 12px;
+            font-size: 1.1rem; /* slightly bigger */
+            border-radius: 5px;
+            text-decoration: none;
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-delete-entry:hover {
+            background-color: #5a6268;
+        }
+
+        /* Other buttons */
+        .btn-add-entry, .btn-reports, .btn-settings {
+            display: inline-block;
+            padding: 8px 14px;
+            font-size: 1.1rem;
+            border-radius: 5px;
+            text-decoration: none;
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-add-entry:hover,
+        .btn-reports:hover,
+        .btn-settings:hover {
+            background-color: #0056b3;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                font-size: 18px;
+            }
+
+            h1, h2 {
+                font-size: 2.8em;
+            }
+
+            a, .btn-delete-entry, .btn-add-entry, .btn-reports, .btn-settings {
+                font-size: 1.2rem;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
 <body>
     <h2>{{ user.username|capitalize }}'s Nutrition Log</h2>
+
     <a href="{{ url_for('nutrition.add_entry', username=user.username) }}" class="btn-add-entry">Add New Entry</a>
 
     <div class="nutrition-summary">
@@ -74,72 +117,126 @@
         <p style="color: {{ 'red' if calories.current_deficit < 0 else 'green' }};">
             {{ calories.current_deficit }} kcal
             {% if calories.current_deficit < 0 %}
-                &#x25BC; <!-- down arrow -->
-                 {{ calories.target_catchup_time.strftime("%H:%M") }}
+                &#x25BC;
+                {{ calories.target_catchup_time.strftime("%H:%M") if calories.target_catchup_time else "" }}
             {% else %}
-                &#x25B2; <!-- up arrow -->
+                &#x25B2;
             {% endif %}
         </p>
-
-        <p>Protein: {{ protein.current_total }}g / {{ protein.goal }}g</p>
-        <p>Fiber: {{ fiber.current_total }}g  /  {{ fiber.goal }}g</p>
+        <p>Protein: {{ protein.current_total }}g</p>
+        <p>Fiber: {{ fiber.current_total }}g</p>
     </div>
 
     <div class="chart-container">
         <canvas id="calorieChart"></canvas>
     </div>
-    
 
-    <ul>
-        {% for entry in entries %}
-            <li>
-                {{ entry.timestamp.strftime('%H:%M') }}:
-                {{ entry.amount }} {{ entry.unit }} {{ entry.food.name }}
-                ({{ entry.calories }} kcal)
-            </li>
-        {% endfor %}
-    </ul>
+    <br>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>   </th>
+                    <th>   </th>
+                    <th>   </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td>{{ entry.timestamp.strftime('%H:%M') }}</td>
+                    <td>{{ entry.food.name[:20] }}</td>
+                    <td>{{ entry.calories|int }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="text-align: right; margin-top: 8px;">
+            <a href="{{ url_for('nutrition.delete_entries', username=user.username) }}" class="btn-delete-entry">
+                Edit / Delete Entries
+            </a>
+        </div>
+    </div>
 
     <div class="chart-container">
         <canvas id="proteinChart"></canvas>
     </div>
-     <div class="chart-container">
+    <div class="chart-container">
         <canvas id="fiberChart"></canvas>
     </div>
-    <a href="{{ url_for('nutrition.reports', username=user.username) }}" class="btn-reports">
-    Reports
-    </a>
-    <a href="{{ url_for('nutrition.month_view', username=user.username) }}" class="btn-month-view">
-    Monthly View
-    </a>
-    <a href="{{ url_for('nutrition.settings', username=user.username) }}" class="btn-settings">
-    User Settings
-    </a>
+
+    <a href="{{ url_for('nutrition.reports', username=user.username) }}" class="btn-reports">Reports</a>
+    <a href="{{ url_for('nutrition.settings', username=user.username) }}" class="btn-settings">User Settings</a>
+    <br><br><br><br>
 
     <script>
-        // Pass Python variables to the external JS file
         const chartData = {
             labels: {{ chart_labels|tojson }},
             actual: {{ calories.actual|tojson }},
             target: {{ calories.target|tojson }},
-            projected: {{ calories.projected|tojson }}
+            projected: {{ calories.projected|tojson }},
+            yesterday: {{ yesterday_calories.actual|tojson }}
         };
         const proteinData = {
             labels: {{ chart_labels|tojson }},
             actual: {{ protein.actual|tojson }},
             target: {{ protein.target|tojson }},
-            projected: {{ protein.projected|tojson }}
+            projected: {{ protein.projected|tojson }},
+            yesterday: {{ yesterday_protein.actual|tojson }}
         };
         const fiberData = {
             labels: {{ chart_labels|tojson }},
             actual: {{ fiber.actual|tojson }},
             target: {{ fiber.target|tojson }},
-            projected: {{ fiber.projected|tojson }}
+            projected: {{ fiber.projected|tojson }},
+            yesterday: {{ yesterday_fiber.actual|tojson }}
         };
-        
 
+        // Existing chart initialization
+        new Chart(document.getElementById('calorieChart'), {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [
+                    { label: 'Actual', data: chartData.actual, borderColor: 'blue', fill: false },
+                    { label: 'Target', data: chartData.target, borderColor: 'green', borderDash: [5,5], fill: false },
+                    { label: 'Projected', data: chartData.projected, borderColor: 'purple', fill: false },
+                    { label: 'Yesterday', data: chartData.yesterday, borderColor: 'orange', fill: false }
+                ]
+            },
+            options: { responsive: true, interaction: { mode: 'index', intersect: false } }
+        });
+
+        new Chart(document.getElementById('proteinChart'), {
+            type: 'line',
+            data: {
+                labels: proteinData.labels,
+                datasets: [
+                    { label: 'Actual', data: proteinData.actual, borderColor: 'blue', fill: false },
+                    { label: 'Target', data: proteinData.target, borderColor: 'green', borderDash: [5,5], fill: false },
+                    { label: 'Projected', data: proteinData.projected, borderColor: 'purple', fill: false },
+                    { label: 'Yesterday', data: proteinData.yesterday, borderColor: 'orange', fill: false }
+                ]
+            },
+            options: { responsive: true, interaction: { mode: 'index', intersect: false } }
+        });
+
+        new Chart(document.getElementById('fiberChart'), {
+            type: 'line',
+            data: {
+                labels: fiberData.labels,
+                datasets: [
+                    { label: 'Actual', data: fiberData.actual, borderColor: 'blue', fill: false },
+                    { label: 'Target', data: fiberData.target, borderColor: 'green', borderDash: [5,5], fill: false },
+                    { label: 'Projected', data: fiberData.projected, borderColor: 'purple', fill: false },
+                    { label: 'Yesterday', data: fiberData.yesterday, borderColor: 'orange', fill: false }
+                ]
+            },
+            options: { responsive: true, interaction: { mode: 'index', intersect: false } }
+        });
     </script>
-   
 </body>
 </html>
 
