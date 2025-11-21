@@ -23,6 +23,10 @@ from . import budget_bp
 
 @budget_bp.route("/")
 def index():
+    return render_template("welcome.html")
+
+@budget_bp.route("/add_transaction")
+def add():
     return render_template("add_transaction.html")
 
 @budget_bp.route("/transactions")

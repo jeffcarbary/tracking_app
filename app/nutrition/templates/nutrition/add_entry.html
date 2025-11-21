@@ -138,12 +138,33 @@
                 width: 100%; /* mobile full width */
             }
 
+            .field-row {
+                gap: 0.3rem; /* less horizontal spacing */
+            }
+
             .field-row .field-group {
                 flex: 1 1 100%;
+                margin-bottom: 0.3rem;
+            }
+
+            label {
+                margin-top: 0.1rem;
+                margin-bottom: 0.05rem;
+                font-size: 0.95rem;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            input[type="date"],
+            input[type="time"],
+            input[list] {
+                padding: 0.3rem;
+                font-size: 0.95rem;
+                margin-top: 0.05rem;
+                margin-bottom: 0.2rem;
             }
         }
 
-        /* Desktop: make Add Entry button full width of form card */
         @media (min-width: 601px) {
             .buttons-row button {
                 width: 100%;
@@ -161,7 +182,9 @@
     </style>
 
     <script>
-        function useEntry(button) {
+        function useEntry(button, event) {
+            if(event) event.preventDefault();  // prevent form submission / reload
+        
             document.getElementById("food_name").value = button.dataset.foodName;
             document.getElementById("amount").value = button.dataset.amount;
             document.getElementById("amount").dataset.base = button.dataset.amount;
@@ -172,7 +195,11 @@
             document.getElementById("protein").dataset.base = button.dataset.protein;
             document.getElementById("fiber").value = button.dataset.fiber;
             document.getElementById("fiber").dataset.base = button.dataset.fiber;
+        
+            // Scroll to top smoothly
+            window.scrollTo({ top: 130, behavior: 'smooth' });
         }
+        
 
         function preventEnterSubmit(event) {
             if(event.key === "Enter") event.preventDefault();
