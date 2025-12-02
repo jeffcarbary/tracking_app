@@ -15,13 +15,13 @@ SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USER = "jeffcarbary@gmail.com"
 SMTP_PASS = "REMOVED_SECRET"  # use app password or env var
-TO_EMAIL = ["jeffcarbary@gmail.com", "deephousegenes@gmail.com"]
-#TO_EMAIL = ["jeffcarbary@gmail.com", "raquelcarbary@gmail.com"]
+#TO_EMAIL = ["jeffcarbary@gmail.com", "deephousegenes@gmail.com"]
+TO_EMAIL = ["jeffcarbary@gmail.com", "raquelcarbary@gmail.com"]
 
-API_BASE = "http://localhost:5000"  # base for API endpoints
+API_BASE = "https://pi.jeffspi.org"  # base for API endpoints
 
 # ===================== SELECT MONTH HERE =====================
-REPORT_MONTH = datetime.date(2025, 10, 1)
+REPORT_MONTH = datetime.date(2025, 11, 1)
 
 month_start = REPORT_MONTH.replace(day=1)
 next_month = (month_start.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)

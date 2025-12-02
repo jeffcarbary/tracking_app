@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JEFFSPI</title>
+  <style>
+    body, html {
+      margin: 0;
+      height: 100%;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    pre {
+      font-family: 'Courier New', monospace;
+      font-size: clamp(0.6rem, 2.8vw, 3.5rem); /* heavily zoomed out */
+      line-height: 0.95;
+      background: linear-gradient(90deg, 
+        #ff006e, #8338ec, #3a86ff, #06ffa5, 
+        #ffbe0b, #fb5607, #ff006e);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-size: 600% 600%;
+      animation: rainbow 10s ease infinite, glow 2.5s ease-in-out infinite alternate;
+      text-shadow: 0 0 40px rgba(255, 0, 255, 0.8);
+    }
+    .bg {
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(circle at 20% 80%, #ff006e 0%, transparent 40%),
+        radial-gradient(circle at 80% 20%, #00ffea 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, #8338ec 0%, transparent 50%);
+      animation: bgPulse 20s ease infinite;
+      z-index: -1;
+    }
+    .plasma {
+      position: fixed;
+      inset: 0;
+      background: repeating-conic-gradient(from 0deg at 50% 50%,
+        #ff006e, #8338ec 15deg, #06ffa5 30deg, #ffbe0b 45deg, #fb5607 60deg);
+      opacity: 0.35;
+      animation: spin 45s linear infinite;
+      z-index: -2;
+    }
+
+    @keyframes rainbow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    @keyframes glow { from {filter: brightness(1)} to {filter: brightness(1.6) drop-shadow(0 0 80px #f0f)} }
+    @keyframes bgPulse { 0%,100%{transform:scale(1);opacity:0.5} 50%{transform:scale(1.5);opacity:0.9} }
+    @keyframes spin { from {transform:rotate(0deg)} to {transform:rotate(360deg)} }
+  </style>
+</head>
+<body>
+  <div class="plasma"></div>
+  <div class="bg"></div>
+
+  <pre>
+     __        _____  _____              .__ 
+    |__| _____/ ____\/ ____\____________ |__|
+    |  |/ __ \   __\\   __\/  ___/\____ \|  |
+    |  \  ___/|  |   |  |  \___ \ |  |_> >  |
+/\__|  |\___  >__|   |__| /____  >|   __/|__|
+\______|    \/                 \/ |__|       
+  </pre>
+</body>
+</html>
+

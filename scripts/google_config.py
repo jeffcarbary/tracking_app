@@ -9,7 +9,7 @@ from googleapiclient.discovery import build
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 # Path to your service account JSON
-SERVICE_ACCOUNT_FILE = "/Users/jcarbary/stuff/flask_demo/budget_app/secrets/western-replica-476202-t2-2876bb81a3f3.json"
+SERVICE_ACCOUNT_FILE = "/Users/jcarbary/stuff/flask_demo/app_new/secrets/western-replica-476202-t2-2876bb81a3f3.json"
 
 # Sheet info
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1la40OxxRhXcuVNq1wJvXAf2iavlakyLswUPdyNCVLqY/edit?gid=891634794"

@@ -80,15 +80,23 @@ def build_metric_series(entries, times, now_rounded, start, end, goal, attr):
         "goal": round(goal)
     }
 
-
 @nutrition_bp.route("/", methods=["GET"])
 def index(username):
     user = get_user(username)
     chicago_tz = ZoneInfo("America/Chicago")
-    today = datetime.now(chicago_tz).date()
     now = datetime.now(chicago_tz).replace(tzinfo=None)
 
-    # Round 'now' to next 15-minute interval
+    # Get selected date from query params
+    selected_date_str = request.args.get("log_date")
+    if selected_date_str:
+        try:
+            selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            selected_date = now.date()
+    else:
+        selected_date = now.date()
+
+    # Round 'now' to next 15-min interval
     minute = (now.minute // 15 + 1) * 15
     hour = now.hour
     if minute == 60:
@@ -96,18 +104,18 @@ def index(username):
         hour += 1
     now_rounded = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
-    # ----- Define windows -----
-    start_today = datetime.combine(today, user.day_start_time)
-    end_today = datetime.combine(today, user.day_end_time)
-    yesterday = today - timedelta(days=1)
-    start_yesterday = datetime.combine(yesterday, user.day_start_time) 
-    end_yesterday = datetime.combine(yesterday, user.day_end_time) 
-    calendar_start = datetime.combine(today, time.min)
-    calendar_end = datetime.combine(today, time.max)
+    # Define day window
+    start_day = datetime.combine(selected_date, user.day_start_time)
+    end_day   = datetime.combine(selected_date, user.day_end_time)
 
-    # Fetch all relevant entries in **one query**
-    min_ts = min(start_yesterday, calendar_start)
-    max_ts = max(end_today, calendar_end)
+    # Yesterday (for comparison)
+    yesterday = selected_date - timedelta(days=1)
+    start_yesterday = datetime.combine(yesterday, user.day_start_time)
+    end_yesterday   = datetime.combine(yesterday, user.day_end_time)
+
+    # Fetch all entries that could possibly be relevant
+    min_ts = min(start_yesterday, start_day)
+    max_ts = max(end_yesterday, end_day)
     entries = (
         LogEntry.query.filter(
             LogEntry.user_id == user.id,
@@ -118,40 +126,46 @@ def index(username):
         .all()
     )
 
-    # ----- Slice entries into windows -----
-    entries_today = [e for e in entries if start_today <= e.timestamp <= end_today]
+    # Slice entries for selected day & yesterday
+    entries_for_day = [e for e in entries if start_day <= e.timestamp <= end_day]
     entries_yesterday = [e for e in entries if start_yesterday <= e.timestamp <= end_yesterday]
-    entries_full_day = [e for e in entries if calendar_start <= e.timestamp <= calendar_end]
 
-    # ----- Build time axes -----
-    def build_times(start, end, interval_minutes=15):
+    # Build chart time axis
+    def build_times(start, end, entries=None, interval_minutes=15):
+        if entries is None:
+            entries = []
+        axis_start, axis_end = start, end
+        if entries:
+            entry_times = [e.timestamp for e in entries]
+            axis_start = min(axis_start, min(entry_times))
+            axis_end   = max(axis_end, max(entry_times))
         times = []
-        current = start
-        interval = timedelta(minutes=interval_minutes)
-        while current <= end:
+        current = axis_start
+        while current <= axis_end:
             times.append(current)
-            current += interval
+            current += timedelta(minutes=interval_minutes)
         return times
 
-    times_today = build_times(start_today, end_today)
-    times_yesterday = build_times(start_yesterday, end_yesterday)
+    times_day = build_times(start_day, end_day, entries_for_day)
+    times_yesterday = build_times(start_yesterday, end_yesterday, entries_yesterday)
+    times_combined = times_day if len(times_day) >= len(times_yesterday) else times_yesterday
 
-    # ----- Build metrics -----
-    calories = build_metric_series(entries_today, times_today, now_rounded, start_today, end_today, user.calorie_goal or 0, "calories")
-    protein = build_metric_series(entries_today, times_today, now_rounded, start_today, end_today, user.protein_goal or 0, "protein")
-    fiber = build_metric_series(entries_today, times_today, now_rounded, start_today, end_today, user.fiber_goal or 0, "fiber")
+    # Build metrics
+    calories = build_metric_series(entries_for_day, times_day, now_rounded, start_day, end_day, user.calorie_goal or 0, "calories")
+    protein  = build_metric_series(entries_for_day, times_day, now_rounded, start_day, end_day, user.protein_goal  or 0, "protein")
+    fiber    = build_metric_series(entries_for_day, times_day, now_rounded, start_day, end_day, user.fiber_goal    or 0, "fiber")
 
     yesterday_calories = build_metric_series(entries_yesterday, times_yesterday, end_yesterday, start_yesterday, end_yesterday, user.calorie_goal or 0, "calories")
-    yesterday_protein = build_metric_series(entries_yesterday, times_yesterday, end_yesterday, start_yesterday, end_yesterday, user.protein_goal or 0, "protein")
-    yesterday_fiber = build_metric_series(entries_yesterday, times_yesterday, end_yesterday, start_yesterday, end_yesterday, user.fiber_goal or 0, "fiber")
+    yesterday_protein  = build_metric_series(entries_yesterday, times_yesterday, end_yesterday, start_yesterday, end_yesterday, user.protein_goal  or 0, "protein")
+    yesterday_fiber    = build_metric_series(entries_yesterday, times_yesterday, end_yesterday, start_yesterday, end_yesterday, user.fiber_goal    or 0, "fiber")
 
-    # ----- Full calendar totals -----
-    calendar_total_calories = sum(e.calories for e in entries_full_day)
-    calendar_total_protein  = sum(e.protein for e in entries_full_day)
-    calendar_total_fiber    = sum(e.fiber for e in entries_full_day)
-    
-    # ----- Calculate calorie deficit -----
-    if now > end_today:
+    # Totals for calendar view
+    calendar_total_calories = sum(e.calories for e in entries_for_day)
+    calendar_total_protein  = sum(e.protein for e in entries_for_day)
+    calendar_total_fiber    = sum(e.fiber for e in entries_for_day)
+
+    # Calorie deficit logic
+    if now > end_day:
         cal_deficit = (user.calorie_goal or 0) - calendar_total_calories
     else:
         cal_deficit = calories["current_deficit"]
@@ -159,8 +173,8 @@ def index(username):
     return render_template(
         "nutrition/index.html",
         user=user,
-        entries=entries_today,
-        chart_labels=[t.strftime("%H:%M") for t in times_today],
+        entries=entries_for_day,
+        chart_labels=[t.strftime("%H:%M") for t in times_combined],
         calories=calories,
         protein=protein,
         fiber=fiber,
@@ -170,8 +184,11 @@ def index(username):
         calendar_total_calories=calendar_total_calories,
         calendar_total_protein=calendar_total_protein,
         calendar_total_fiber=calendar_total_fiber,
-        cal_deficit=cal_deficit
+        cal_deficit=cal_deficit,
+        selected_date=selected_date.isoformat()  # for the date picker
     )
+
+
 
 @nutrition_bp.route("/add_entry", methods=["GET", "POST"])
 def add_entry(username):
@@ -314,6 +331,7 @@ def delete_entry(username, entry_id):
     db.session.commit()
     return redirect(url_for("nutrition.delete_entries", username=username))
 
+
 @nutrition_bp.route("/edit_entry/<int:entry_id>", methods=["GET", "POST"])
 def edit_entry(username, entry_id):
     # Get the user object
@@ -372,6 +390,7 @@ def settings(username):
         flash("Settings updated!", "success")
         return redirect(url_for("nutrition.settings", username=username))
 
+
     return render_template("nutrition/settings.html", user=user)
 
 @nutrition_bp.route("/month_view", methods=["GET", "POST"])
@@ -405,6 +424,7 @@ def month_view(username):
     # Prepare chart data
     chart_labels = []
     cal_data = []
+
     pro_data = []
     fib_data = []
 
