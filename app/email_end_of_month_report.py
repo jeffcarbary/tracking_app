@@ -9,16 +9,17 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from jinja2 import Template
 from  app.utils.charts import plot_end_of_month_chart, plot_category_pie
+from scripts.config import API_BASE_URL
 
 # ===================== CONFIG =====================
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 SMTP_USER = "jeffcarbary@gmail.com"
 SMTP_PASS = "REMOVED_SECRET"  # use app password or env var
-#TO_EMAIL = ["jeffcarbary@gmail.com", "deephousegenes@gmail.com"]
-TO_EMAIL = ["jeffcarbary@gmail.com", "raquelcarbary@gmail.com"]
+TO_EMAIL = ["jeffcarbary@gmail.com", "deephousegenes@gmail.com"]
+#TO_EMAIL = ["jeffcarbary@gmail.com", "raquelcarbary@gmail.com"]
 
-API_BASE = "https://pi.jeffspi.org"  # base for API endpoints
+API_BASE = API_BASE_URL  # base for API endpoints
 
 # ===================== SELECT MONTH HERE =====================
 REPORT_MONTH = datetime.date(2025, 11, 1)
