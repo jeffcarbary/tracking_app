@@ -1,6 +1,7 @@
-# Budget App 💰
+# Budget and Nutritional Logging App 💰
 
 A simple Flask-based web API for tracking transactions and categories, backed by PostgreSQL and Dockerized for easy deployment.
+Enhanced to include nutritional logging.
 
 ## Features
 - REST API with Flask
@@ -11,4 +12,9 @@ A simple Flask-based web API for tracking transactions and categories, backed by
 - Stores unique colors for each transaction category for reporting via front end and/or google sheet
 - Add transaction page supports copy / paste from text message alert
 - Email report
+- Tracking nutrional data including fiber, protein, and calories
+- Easy to use interface for adding nutrition including searchable previous entries and auto calculating values
+- Daily charts including projections and targets as well as overlaying yesterdays line on the chart for comparison
+- Reports for month and week
+  
 
