@@ -11,6 +11,7 @@ A simple Flask-based web API for tracking budget transactions - later extended a
 - Supports categories, transactions, and reporting
 - Stores unique colors for each transaction category for reporting via front end and/or google sheet
 - Add transaction page supports copy / paste from text message alert
+- Integrates with google sheets for presentation and data backup / recovery
 - Email report
 - Tracking nutrional data including fiber, protein, and calories
 - Easy to use interface for adding nutrition including searchable previous entries and auto calculating values
