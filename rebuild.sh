@@ -1,8 +1,8 @@
 # Stop containers
-docker-compose down
+docker compose down
 
 # Rebuild with updated Dockerfile
-docker-compose build
+docker compose build
 
 # Start containers again
-docker-compose up -d
+docker compose up -d

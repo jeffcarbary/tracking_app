@@ -1,11 +1,30 @@
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from .extensions import db
 import logging
+import time
+from prometheus_client import Counter
+
+REQUEST_COUNT = Counter(
+    "http_requests_total",
+    "Total HTTP requests",
+    ["method", "endpoint"]
+)
 
 def create_app():
     app = Flask(__name__)
+    @app.before_request
+    def before_request():
+        request.start_time = time.time()
+    
+    @app.after_request
+    def after_request(response):
+        REQUEST_COUNT.labels(
+            method=request.method,
+            endpoint=request.path
+        ).inc()
+        return response
     app.config.from_object("app.config.Config")
     app.secret_key = "a-very-secret-key" 
 
@@ -28,6 +47,9 @@ def create_app():
 
     from .nutrition.routes import nutrition_bp
     app.register_blueprint(nutrition_bp)
+
+    from .metrics.routes import metrics_bp
+    app.register_blueprint(metrics_bp)
 
     return app
 
