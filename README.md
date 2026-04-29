@@ -15,7 +15,9 @@ A simple Flask-based web API for tracking budget transactions - later extended a
 - Email report
 - Tracking nutrional data including fiber, protein, and calories
 - Easy to use interface for adding nutrition including searchable previous entries and auto calculating values
+- Multi-user support
 - Daily charts including projections and targets as well as overlaying yesterdays line on the chart for comparison
 - Reports for month and week
+- Metrics endpoint exposed for Prometheus / Grafana
   
 
