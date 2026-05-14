@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-export FLASK_APP=run:create_app
+export FLASK_APP=app:create_app
 export FLASK_ENV=development
 export FLASK_RUN_HOST=0.0.0.0
 
@@ -25,7 +25,6 @@ do
 done
 
 echo "Postgres ready."
-flask db upgrade
 
 #flask run
-flask run --host=0.0.0.0 --reload
+flask run --host=0.0.0.0 --port=5000

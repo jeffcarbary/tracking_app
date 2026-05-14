@@ -7,3 +7,4 @@ requests
 flask_migrate
 matplotlib
 jinja2
+prometheus_client

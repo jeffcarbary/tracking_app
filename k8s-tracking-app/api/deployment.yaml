@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracking-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tracking-api
+  template:
+    metadata:
+      labels:
+        app: tracking-api
+    spec:
+      containers:
+        - name: api
+          image: jeffcarbary/tracking-api:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DATABASE_HOST
+              value: postgres
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: DATABASE_USER
+              value: SECRET
+            - name: DATABASE_PASSWORD
+              value: SECRET
+            - name: DATABASE_NAME
+              value: budget_db
+            - name: DATABASE_URL
+              value: postgresql://SECRET:SECRET@postgres:5432/budget_db

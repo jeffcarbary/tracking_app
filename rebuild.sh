@@ -1,8 +1,3 @@
-# Stop containers
-docker compose down
+docker build -t jeffcarbary/tracking-api:latest .
+docker push jeffcarbary/tracking-api:latest
 
-# Rebuild with updated Dockerfile
-docker compose build
-
-# Start containers again
-docker compose up -d

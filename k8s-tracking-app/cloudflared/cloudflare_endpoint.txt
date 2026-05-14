@@ -1,0 +1,2 @@
+#register this on cloudflare zero trust network connector
+#http://tracking-api.default.svc.cluster.local:5000
