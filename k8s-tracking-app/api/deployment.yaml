@@ -20,13 +20,13 @@ spec:
           env:
             - name: DATABASE_HOST
               value: postgres
+
             - name: DATABASE_PORT
               value: "5432"
-            - name: DATABASE_USER
-              value: SECRET
-            - name: DATABASE_PASSWORD
-              value: SECRET
+
             - name: DATABASE_NAME
               value: budget_db
-            - name: DATABASE_URL
-              value: postgresql://SECRET:SECRET@postgres:5432/budget_db
+            
+          envFrom:
+            - secretRef:
+                name: postgres-secret
