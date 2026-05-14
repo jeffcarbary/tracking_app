@@ -12,6 +12,8 @@ REQUEST_COUNT = Counter(
     ["method", "endpoint"]
 )
 
+migrate = Migrate()
+
 def create_app():
     app = Flask(__name__)
     @app.before_request
@@ -35,7 +37,8 @@ def create_app():
 
     # Initialize extensions
     db.init_app(app)
-    Migrate(app, db)
+    migrate.init_app(app, db)
+    
 
     # Import models so Alembic sees them
     from .budget import models as budget_models
