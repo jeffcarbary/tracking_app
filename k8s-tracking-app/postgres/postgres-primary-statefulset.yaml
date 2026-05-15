@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-primary
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: tiny-think-01
+
+      initContainers:
+        - name: inject-replication-user
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              sed -e "s/__REPL_PASSWORD__/${REPL_PASSWORD}/g" \
+              -e "s/__REPL_USER__/${REPL_USER}/g" \
+                /config/01-replication-user.sql \
+                > /scripts/01-replication-user.sql
+
+          env:
+            - name: REPL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-replication-secret
+                  key: REPL_USER
+            - name: REPL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-replication-secret
+                  key: REPL_PASSWORD
+
+          volumeMounts:
+            - name: init-template
+              mountPath: /config
+            - name: init-scripts
+              mountPath: /scripts
+
+      containers:
+        - name: postgres
+          image: postgres:14
+          args:
+            - "-c"
+            - "config_file=/etc/postgresql/postgresql.conf"
+            - "-c"
+            - "hba_file=/etc/postgresql/pg_hba.conf"
+
+
+          ports:
+            - containerPort: 5432
+
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+
+            - name: postgres-config
+              mountPath: /etc/postgresql
+
+            - name: init-scripts
+              mountPath: /docker-entrypoint-initdb.d
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-primary-pvc
+
+        - name: postgres-config
+          configMap:
+            name: postgres-primary-config
+
+        # TEMPLATE INPUT (ConfigMap)
+        - name: init-template
+          configMap:
+            name: postgres-init
+
+        # GENERATED OUTPUT (shared filesystem)
+        - name: init-scripts
+          emptyDir: {}

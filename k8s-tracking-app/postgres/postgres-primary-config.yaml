@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-primary-config
+data:
+  postgresql.conf: |
+    # Connection settings
+    listen_addresses = '*'
+    port = 5432
+
+    # WAL / replication
+    wal_level = replica
+    max_wal_senders = 10
+    max_replication_slots = 10
+    wal_keep_size = 512MB
+
+    # Helps replicas catch up faster after lag
+    hot_standby = on
+
+    # Logging (useful while debugging replication)
+    log_replication_commands = on
+
+  pg_hba.conf: |
+    # Local connections inside container
+    local   all             all                                     trust
+    host    all             all             127.0.0.1/32            trust
+    host    all             all             ::1/128                 trust
+
+    # Allow app access (adjust as needed)
+    host    all             all             0.0.0.0/0               md5
+
+    # Replication user access (IMPORTANT)
+    host    replication     repl_user      0.0.0.0/0               md5

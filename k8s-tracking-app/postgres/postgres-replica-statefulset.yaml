@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-replica
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-replica
+  template:
+    metadata:
+      labels:
+        app: postgres-replica
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: raspberrypi
+
+      # Initialize the replica by cloning the primary with pg_basebackup
+      initContainers:
+        - name: clone-primary
+          image: postgres:14
+          envFrom:
+            - secretRef:
+                name: postgres-replication-secret
+          command:
+            - bash
+            - -c
+            - |
+              set -e
+
+              # Only run if the data directory is empty
+              if [ -s /var/lib/postgresql/data/PG_VERSION ]; then
+                echo "Replica data directory already initialized."
+                exit 0
+              fi
+
+              echo "Cloning primary database..."
+
+              rm -rf /var/lib/postgresql/data/*
+
+              export PGPASSWORD="$REPL_PASSWORD"
+
+              pg_basebackup \
+                -h postgres-primary \
+                -p 5432 \
+                -U $REPL_USER \
+                -D /var/lib/postgresql/data \
+                -Fp \
+                -Xs \
+                -P \
+                -R
+
+              # Ensure correct ownership
+              chown -R postgres:postgres /var/lib/postgresql/data
+
+              echo "Base backup complete."
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+
+      containers:
+        - name: postgres
+          image: postgres:14
+          args:
+            - "-c"
+            - "config_file=/etc/postgresql/postgresql.conf"
+          ports:
+            - containerPort: 5432
+
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+
+            - name: postgres-config
+              mountPath: /etc/postgresql
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-replica-pvc
+
+        - name: postgres-config
+          configMap:
+            name: postgres-replica-config
