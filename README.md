@@ -1,6 +1,6 @@
 # Budget and Nutritional Logging App
 
-A flask-based web API for tracking budget transactions - extended as a nutrition logger/tracker, backed by PostgreSQL and deployed in kubernetes cluster with active replication to backup persistent volume.
+A flask-based web API for tracking budget transactions - extended as a nutrition logger/tracker, backed by PostgreSQL and deployed in kubernetes cluster with streaming WAL replication to backup persistent volume.
 Code is 90% AI Generated integrated and built manually.
 
 
